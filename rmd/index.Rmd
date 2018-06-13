@@ -1,0 +1,8 @@
+---
+title: "Home"
+# author: Yanyu Liang
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+# Re-run [`mash`](https://github.com/stephenslab/mashr) and [`flash`](https://github.com/stephenslab/flashr)
+

@@ -1,0 +1,19 @@
+name: "explore-eqtl"
+output_dir: "../docs"
+include: [".nojekyll"]
+exclude: ["include"]
+navbar:
+  title: "Explore eQTL"
+  left:
+    - text: "Home"
+      href: index.html
+  right:
+    - icon: fa-github
+      href: https://github.com/liangyy/explore-eqtl
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+    theme: cosmo
+    highlight: textmate
