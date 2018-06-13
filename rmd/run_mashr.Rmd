@@ -1,0 +1,85 @@
+---
+title: "Run mashr on GTEx z-scores"
+# author: Yanyu Liang
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+# Set up
+
+```{r setup}
+library(ashr)
+library(mashr)
+```
+
+# Read data
+
+```{r}
+## get estimated gtex effect size and standard deviation
+con <- gzcon(url('https://github.com/stephenslab/gtexresults/raw/master/data/MatrixEQTLSumStats.Portable.Z.rds'))
+data <- readRDS(con)
+close(con)
+strong.b <- data$test.b
+strong.s <- data$test.s
+random.b <- data$random.b
+random.s <- data$random.s
+dim(strong.b)
+dim(strong.s)
+dim(random.b)
+dim(random.s)
+## get gtex color
+gtex.color <- read.table(url('https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt'), sep = '\t', comment.char = '')
+gtex.color <- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
+dim(gtex.color)
+tissue.color <- as.character(gtex.color[,2])
+```
+
+# Run mash
+
+Followed the steps in [eQTL analysis outline of `mashr`](https://stephenslab.github.io/mashr/articles/eQTL_outline.html)
+
+## Correlation structure
+
+```{r}
+data.temp <- mash_set_data(random.b, random.s)
+Vhat <- estimate_null_correlation(data.temp)
+rm(data.temp)
+dim(Vhat)
+```
+
+## Create main data objects
+
+```{r}
+data.random <- mash_set_data(random.b, random.s, V = Vhat)
+data.strong <- mash_set_data(strong.b, strong.s, V = Vhat)
+```
+
+## Data driven covariances
+
+```{r}
+U.pca <- cov_pca(data.strong)
+```
+
+# Plot factors
+
+```{r, fig.height = 13, fig.width = 13}
+f.df <- melt(f)
+nfactor <- dim(f)[2]
+colnames(f.df) <- c('tissue', 'factor', 'value')
+f.df$tissue <- factor(f.df$tissue, levels = 1 : 44, labels = as.character(gtex.color[,1]) )
+f.df$factor <- factor(f.df$factor, levels = 1: nfactor, labels = paste("Factor", 1 : nfactor,"; pve:", round(pve.gb, 3)))
+ggplot(f.df, aes(x = tissue, y = value, fill = factor(tissue))) +
+  geom_bar(stat = "identity", width = 0.6) +
+  scale_fill_manual(values = tissue.color) +
+  scale_x_discrete(labels = NULL) +
+  theme_grey()+
+  theme(legend.position="right", legend.text=element_text(size=9), axis.text.y = element_text(size = 5)) + 
+  labs(title = "GTEx data", y = "factor values" ,x = "tissues", fill="tissue") +
+  facet_wrap(~ factor, ncol = 2, scales = "free_y") +
+  guides(fill = guide_legend(ncol = 1, keyheight = 0.8, keywidth = 0.3))
+```
+
+# Save calculation result
+
+```{r}
+saveRDS(f.gb, file = '../output/gtex_flash.rds')
+```

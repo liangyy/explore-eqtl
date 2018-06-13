@@ -6,3 +6,5 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 
 # Re-run [`mash`](https://github.com/stephenslab/mashr) and [`flash`](https://github.com/stephenslab/flashr)
 
+* See flash result [here](run_flashr.html)
+* See mash result [here](run_mashr.html)
