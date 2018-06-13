@@ -1,0 +1,11 @@
+---
+title: "Run flashr on GTEx z-scores"
+# author: Yanyu Liang
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+# Read data
+
+```{r}
+con <- url('https://github.com/stephenslab/gtexresults/raw/master/data/MatrixEQTLSumStats.Portable.Z.rds')
+```
