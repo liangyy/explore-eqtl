@@ -1,0 +1,108 @@
+---
+title: "Preliminary analysis of flash and mash result"
+# author: Yanyu Liang
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+# Set up
+
+```{r setup}
+library(ggplot2)
+library(mashr)
+library(biomaRt)
+library(dplyr)
+library(topGO)
+library(pander)
+panderOptions('knitr.auto.asis', FALSE)
+panderOptions('table.split.table', Inf)
+```
+
+# Read data
+
+```{r}
+flash <- readRDS('../output/gtex_flash.rds')
+mash <- readRDS('../output/gtex_mash.rds')
+eqtl <- read.table('../output/strong_eqtl_names.txt')$V1
+```
+
+# Factor 5
+
+See details of factor 5 at [here](run_flashr.html)
+
+```{r}
+l <- flash$EL
+dim(l)
+l.five <- l[, 5]
+hist(l.five)
+top.ten.idx <- order(l.five, decreasing = T)[1:10]
+bottom.ten.idx <- order(l.five, decreasing = F)[1:10]
+```
+
+## Ten eQTL with highest loading
+
+```{r, fig.height = 15, fig.width = 8}
+par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, top.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, ': ', eqtl[i]))
+}
+```
+
+## Ten eQTL with lowest loading
+
+```{r, fig.height = 15, fig.width = 8}
+par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, bottom.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, ': ', eqtl[i]))
+}
+```
+
+# EQTL and gene
+
+```{r, results='asis'}
+annotateEQTL <- function(eqtl, idx, ensembl) {
+  ensg <- data.frame(t(sapply(eqtl[idx], function(str) {
+    temp <- strsplit(as.character(str), '_')[[1]]
+    x <- temp[1]
+    chr <- temp[2]
+    s <- temp[3]
+    return(c(strsplit(x, '.', fixed = T)[[1]][1], chr, s))
+  })))
+  colnames(ensg) <- c('ensembl_gene_id', 'eqtl_chr', 'eqtl_start')
+  ensg$ensembl_gene_id <- as.character(ensg$ensembl_gene_id)
+  re <- getBM(
+    attributes = c('ensembl_gene_id', 'hgnc_symbol', 'chromosome_name', 'start_position', 'end_position', 'strand', 'go_id', 'name_1006', 'uniprot_genename', 'uniprot_swissprot_accession'), 
+    filters = 'ensembl_gene_id',
+    values = ensg[, 1],
+    mart = ensembl)
+  re <- inner_join(re, ensg, by = 'ensembl_gene_id')
+  return(re)
+}
+genGene2GO <- function(g2g, re) {
+  gene <- unique(re$ensembl_gene_id)
+  for(x in gene) {
+    g2g[[x]] <- re[re$ensembl_gene_id == x, 'go_id']
+  }
+  return(g2g)
+}
+ensembl <- useMart(biomart="ENSEMBL_MART_ENSEMBL", host="feb2014.archive.ensembl.org", path="/biomart/martservice", dataset="hsapiens_gene_ensembl")
+positive.re <- annotateEQTL(eqtl, c(order(l.five, decreasing = T)[1:50], order(l.five, decreasing = F)[1:50]), ensembl)
+control.re <- annotateEQTL(eqtl, order(abs(l.five), decreasing = F)[1:500], ensembl)
+gene2go <- list()
+gene2go <- genGene2GO(gene2go, positive.re)
+gene2go <- genGene2GO(gene2go, control.re)
+all.gene <- union(unique(positive.re$ensembl_gene_id), unique(control.re$ensembl_gene_id))
+gene.list <- factor(as.integer(all.gene %in% unique(positive.re$ensembl_gene_id)))
+names(gene.list) <- all.gene
+map <- list(BP = 'Biological process', MF = 'Molecular function', CC = 'Cellular component')
+for(i in c('BP', 'MF', 'CC')) {
+  cat('##', map[[i]])
+  cat('\n')
+  GOdata <- new("topGOdata", ontology = i, allGenes = gene.list, annot = annFUN.gene2GO, gene2GO = gene2go)
+  resultFisher <- runTest(GOdata, algorithm = "classic", statistic = "fisher")
+  allRes <- GenTable(GOdata, classicFisher = resultFisher)
+  pander(allRes, caption = i)
+  cat('\n')
+  cat('\n')
+}
+
+```

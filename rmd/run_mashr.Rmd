@@ -7,8 +7,12 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 # Set up
 
 ```{r setup}
+source('../scripts/mylib.R')
 library(ashr)
 library(mashr)
+library(ExtremeDeconvolution)
+library(ggplot2)
+library(reshape2)
 ```
 
 # Read data
@@ -39,8 +43,8 @@ Followed the steps in [eQTL analysis outline of `mashr`](https://stephenslab.git
 
 ## Correlation structure
 
-```{r}
-data.temp <- mash_set_data(random.b, random.s)
+```{r, eval=FALSE}
+data.temp <- mash_set_data(random.b, random.s, alpha = 1)
 Vhat <- estimate_null_correlation(data.temp)
 rm(data.temp)
 dim(Vhat)
@@ -48,38 +52,85 @@ dim(Vhat)
 
 ## Create main data objects
 
-```{r}
-data.random <- mash_set_data(random.b, random.s, V = Vhat)
-data.strong <- mash_set_data(strong.b, strong.s, V = Vhat)
+```{r, eval=FALSE}
+data.random <- mash_set_data(random.b, random.s, V = Vhat, alpha = 1)
+data.strong <- mash_set_data(strong.b, strong.s, V = Vhat, alpha = 1)
 ```
 
 ## Data driven covariances
 
-```{r}
-U.pca <- cov_pca(data.strong)
+```{r, eval=FALSE}
+U.pca <- cov_pca(data.strong, 5)
+U.ed <- cov_ed(data.strong, U.pca)
 ```
 
-# Plot factors
+## Canonical covariance
+
+```{r, eval=FALSE}
+U.c <- cov_canonical(data.random)
+```
+
+## Run mashr
+
+```{r, eval=FALSE}
+model <- mash(data.random, Ulist = c(U.ed, U.c), outputlevel = 1)
+```
+```
+ - Computing 20000 x 1101 likelihood matrix.
+ - Likelihood calculations took 110.50 seconds.
+ - Fitting model with 1101 mixture components.
+optmethod = "mixIP" requires REBayes package; switching to optmethod = "mixEM" - Model fitting took 1984.37 seconds.
+```
+
+## Compute posterior
+
+```{r, eval=FALSE}
+m.strong <- mash(data.strong, g = get_fitted_g(model), fixg = TRUE)
+```
+
+```
+ - Computing 16069 x 1101 likelihood matrix.
+ - Likelihood calculations took 43.08 seconds.
+ - Computing posterior matrices.
+ - Computation allocated took 7.17 seconds.
+FIXME: 'compute_posterior_matrices' in Rcpp does not transfer EZ to EE
+```
+
+## Save result
+
+```{r, eval=FALSE}
+saveRDS(list(model = model, posterior = m.strong), file = '../output/gtex_mash.rds')
+```
+
+# Plot sharing
 
 ```{r, fig.height = 13, fig.width = 13}
-f.df <- melt(f)
-nfactor <- dim(f)[2]
-colnames(f.df) <- c('tissue', 'factor', 'value')
-f.df$tissue <- factor(f.df$tissue, levels = 1 : 44, labels = as.character(gtex.color[,1]) )
-f.df$factor <- factor(f.df$factor, levels = 1: nfactor, labels = paste("Factor", 1 : nfactor,"; pve:", round(pve.gb, 3)))
-ggplot(f.df, aes(x = tissue, y = value, fill = factor(tissue))) +
-  geom_bar(stat = "identity", width = 0.6) +
-  scale_fill_manual(values = tissue.color) +
-  scale_x_discrete(labels = NULL) +
-  theme_grey()+
-  theme(legend.position="right", legend.text=element_text(size=9), axis.text.y = element_text(size = 5)) + 
-  labs(title = "GTEx data", y = "factor values" ,x = "tissues", fill="tissue") +
-  facet_wrap(~ factor, ncol = 2, scales = "free_y") +
-  guides(fill = guide_legend(ncol = 1, keyheight = 0.8, keywidth = 0.3))
+share <- get_pairwise_sharing(m.strong)
+ntissue <- dim(share)[1]
+colnames(share) <- 1 : ntissue
+row.names(share) <- 1 : ntissue
+df.share <- melt(get_upper_tri(share), na.rm = TRUE)
+colnames(df.share) <- c('tissue1', 'tissue2', 'sharing')
+df.share$tissue1 <- colorGTEx(df.share$tissue1, gtex.color[, 1], ntissue)
+df.share$tissue2 <- colorGTEx(df.share$tissue2, gtex.color[, 1], ntissue)
+p <- ggplot() + 
+  geom_tile(data = df.share, aes(x = tissue1, y = tissue2, fill = sharing), color = 'white', size = 2) +
+  scale_fill_gradient2(midpoint = 0.7, low = "blue", mid = "white", high = "red", space = "Lab" ) + 
+  geom_text(aes(x = 1 : ntissue + 0.5, y= 1 : ntissue - 0.5, label = gtex.color[,1], color = factor(gtex.color[,1])), hjust = 0, angle = -45) + 
+  coord_equal(xlim = c(0, 51), ylim = c(-7, 44)) +
+  scale_color_manual(values = tissue.color, guide = FALSE)
+p <- p +
+  theme_bw() +
+  theme(
+    axis.line = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank()) 
+p
 ```
 
-# Save calculation result
 
-```{r}
-saveRDS(f.gb, file = '../output/gtex_flash.rds')
-```

@@ -8,3 +8,7 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 
 * See flash result [here](run_flashr.html)
 * See mash result [here](run_mashr.html)
+
+# Preliminary analysis
+
+* EQTLs with top loading for "heart factor" [link](preliminary_flash_mash.html)

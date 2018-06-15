@@ -21,6 +21,7 @@ data <- readRDS(con)
 close(con)
 strong.z <- data$test.z
 dim(strong.z)
+gene.names <- row.names(strong.z)
 ## get gtex color
 gtex.color <- read.table(url('https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt'), sep = '\t', comment.char = '')
 gtex.color <- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
@@ -62,4 +63,5 @@ ggplot(f.df, aes(x = tissue, y = value, fill = factor(tissue))) +
 
 ```{r}
 saveRDS(f.gb, file = '../output/gtex_flash.rds')
+write.table(gene.names, file = '../output/strong_eqtl_names.txt', quote = F, row.names = F, col.names = F)
 ```

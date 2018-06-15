@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>Preliminary analysis of flash and mash result</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Explore eQTL</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/liangyy/explore-eqtl">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Preliminary analysis of flash and mash result</h1>
+<h4 class="date"><em>14 June, 2018</em></h4>
+
+</div>
+
+
+<div id="set-up" class="section level1">
+<h1><span class="header-section-number">1</span> Set up</h1>
+<pre class="r"><code>library(ggplot2)
+library(mashr)
+library(biomaRt)
+library(dplyr)
+library(topGO)
+library(pander)
+panderOptions(&#39;knitr.auto.asis&#39;, FALSE)
+panderOptions(&#39;table.split.table&#39;, Inf)</code></pre>
+</div>
+<div id="read-data" class="section level1">
+<h1><span class="header-section-number">2</span> Read data</h1>
+<pre class="r"><code>flash &lt;- readRDS(&#39;../output/gtex_flash.rds&#39;)
+mash &lt;- readRDS(&#39;../output/gtex_mash.rds&#39;)
+eqtl &lt;- read.table(&#39;../output/strong_eqtl_names.txt&#39;)$V1</code></pre>
+</div>
+<div id="factor-5" class="section level1">
+<h1><span class="header-section-number">3</span> Factor 5</h1>
+<p>See details of factor 5 at <a href="run_flashr.html">here</a></p>
+<pre class="r"><code>l &lt;- flash$EL
+dim(l)</code></pre>
+<pre><code>## [1] 16069    23</code></pre>
+<pre class="r"><code>l.five &lt;- l[, 5]
+hist(l.five)</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code>top.ten.idx &lt;- order(l.five, decreasing = T)[1:10]
+bottom.ten.idx &lt;- order(l.five, decreasing = F)[1:10]</code></pre>
+<div id="ten-eqtl-with-highest-loading" class="section level2">
+<h2><span class="header-section-number">3.1</span> Ten eQTL with highest loading</h2>
+<pre class="r"><code>par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, top.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
+}</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-3-1.png" width="768" /></p>
+</div>
+<div id="ten-eqtl-with-lowest-loading" class="section level2">
+<h2><span class="header-section-number">3.2</span> Ten eQTL with lowest loading</h2>
+<pre class="r"><code>par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, bottom.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
+}</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-4-1.png" width="768" /></p>
+</div>
+</div>
+<div id="eqtl-and-gene" class="section level1">
+<h1><span class="header-section-number">4</span> EQTL and gene</h1>
+<pre class="r"><code>annotateEQTL &lt;- function(eqtl, idx, ensembl) {
+  ensg &lt;- data.frame(t(sapply(eqtl[idx], function(str) {
+    temp &lt;- strsplit(as.character(str), &#39;_&#39;)[[1]]
+    x &lt;- temp[1]
+    chr &lt;- temp[2]
+    s &lt;- temp[3]
+    return(c(strsplit(x, &#39;.&#39;, fixed = T)[[1]][1], chr, s))
+  })))
+  colnames(ensg) &lt;- c(&#39;ensembl_gene_id&#39;, &#39;eqtl_chr&#39;, &#39;eqtl_start&#39;)
+  ensg$ensembl_gene_id &lt;- as.character(ensg$ensembl_gene_id)
+  re &lt;- getBM(
+    attributes = c(&#39;ensembl_gene_id&#39;, &#39;hgnc_symbol&#39;, &#39;chromosome_name&#39;, &#39;start_position&#39;, &#39;end_position&#39;, &#39;strand&#39;, &#39;go_id&#39;, &#39;name_1006&#39;, &#39;uniprot_genename&#39;, &#39;uniprot_swissprot_accession&#39;), 
+    filters = &#39;ensembl_gene_id&#39;,
+    values = ensg[, 1],
+    mart = ensembl)
+  re &lt;- inner_join(re, ensg, by = &#39;ensembl_gene_id&#39;)
+  return(re)
+}
+genGene2GO &lt;- function(g2g, re) {
+  gene &lt;- unique(re$ensembl_gene_id)
+  for(x in gene) {
+    g2g[[x]] &lt;- re[re$ensembl_gene_id == x, &#39;go_id&#39;]
+  }
+  return(g2g)
+}
+ensembl &lt;- useMart(biomart=&quot;ENSEMBL_MART_ENSEMBL&quot;, host=&quot;feb2014.archive.ensembl.org&quot;, path=&quot;/biomart/martservice&quot;, dataset=&quot;hsapiens_gene_ensembl&quot;)
+positive.re &lt;- annotateEQTL(eqtl, c(order(l.five, decreasing = T)[1:50], order(l.five, decreasing = F)[1:50]), ensembl)
+control.re &lt;- annotateEQTL(eqtl, order(abs(l.five), decreasing = F)[1:500], ensembl)
+gene2go &lt;- list()
+gene2go &lt;- genGene2GO(gene2go, positive.re)
+gene2go &lt;- genGene2GO(gene2go, control.re)
+all.gene &lt;- union(unique(positive.re$ensembl_gene_id), unique(control.re$ensembl_gene_id))
+gene.list &lt;- factor(as.integer(all.gene %in% unique(positive.re$ensembl_gene_id)))
+names(gene.list) &lt;- all.gene
+map &lt;- list(BP = &#39;Biological process&#39;, MF = &#39;Molecular function&#39;, CC = &#39;Cellular component&#39;)
+for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
+  cat(&#39;##&#39;, map[[i]])
+  cat(&#39;\n&#39;)
+  GOdata &lt;- new(&quot;topGOdata&quot;, ontology = i, allGenes = gene.list, annot = annFUN.gene2GO, gene2GO = gene2go)
+  resultFisher &lt;- runTest(GOdata, algorithm = &quot;classic&quot;, statistic = &quot;fisher&quot;)
+  allRes &lt;- GenTable(GOdata, classicFisher = resultFisher)
+  pander(allRes, caption = i)
+  cat(&#39;\n&#39;)
+  cat(&#39;\n&#39;)
+}</code></pre>
+<div id="biological-process" class="section level2">
+<h2><span class="header-section-number">4.1</span> Biological process</h2>
+<pre><code>## 
+## Building most specific GOs .....</code></pre>
+<pre><code>##  ( 1400 GO terms found. )</code></pre>
+<pre><code>## 
+## Build GO DAG topology ..........</code></pre>
+<pre><code>##  ( 3780 GO terms and 8446 relations. )</code></pre>
+<pre><code>## 
+## Annotating nodes ...............</code></pre>
+<pre><code>##  ( 359 genes annotated to the GO terms. )</code></pre>
+<pre><code>## 
+##           -- Classic Algorithm -- 
+## 
+##       the algorithm is scoring 1562 nontrivial nodes
+##       parameters: 
+##           test statistic: fisher</code></pre>
+<table>
+<caption>BP</caption>
+<colgroup>
+<col width="13%" />
+<col width="33%" />
+<col width="12%" />
+<col width="14%" />
+<col width="11%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">GO.ID</th>
+<th align="center">Term</th>
+<th align="center">Annotated</th>
+<th align="center">Significant</th>
+<th align="center">Expected</th>
+<th align="center">classicFisher</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><a href="GO:0055114" class="uri">GO:0055114</a></td>
+<td align="center">oxidation-reduction process</td>
+<td align="center">23</td>
+<td align="center">14</td>
+<td align="center">4.74</td>
+<td align="center">1.4e-05</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0045333" class="uri">GO:0045333</a></td>
+<td align="center">cellular respiration</td>
+<td align="center">4</td>
+<td align="center">4</td>
+<td align="center">0.82</td>
+<td align="center">0.0017</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0015980" class="uri">GO:0015980</a></td>
+<td align="center">energy derivation by oxidation of organi…</td>
+<td align="center">9</td>
+<td align="center">6</td>
+<td align="center">1.86</td>
+<td align="center">0.0032</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0006091" class="uri">GO:0006091</a></td>
+<td align="center">generation of precursor metabolites and …</td>
+<td align="center">12</td>
+<td align="center">7</td>
+<td align="center">2.47</td>
+<td align="center">0.0040</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0008277" class="uri">GO:0008277</a></td>
+<td align="center">regulation of G-protein coupled receptor…</td>
+<td align="center">3</td>
+<td align="center">3</td>
+<td align="center">0.62</td>
+<td align="center">0.0085</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0044281" class="uri">GO:0044281</a></td>
+<td align="center">small molecule metabolic process</td>
+<td align="center">61</td>
+<td align="center">20</td>
+<td align="center">12.57</td>
+<td align="center">0.0101</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0007186" class="uri">GO:0007186</a></td>
+<td align="center">G-protein coupled receptor signaling pat…</td>
+<td align="center">8</td>
+<td align="center">5</td>
+<td align="center">1.65</td>
+<td align="center">0.0110</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:1901657" class="uri">GO:1901657</a></td>
+<td align="center">glycosyl compound metabolic process</td>
+<td align="center">14</td>
+<td align="center">7</td>
+<td align="center">2.89</td>
+<td align="center">0.0120</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0006399" class="uri">GO:0006399</a></td>
+<td align="center">tRNA metabolic process</td>
+<td align="center">6</td>
+<td align="center">4</td>
+<td align="center">1.24</td>
+<td align="center">0.0180</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0006163" class="uri">GO:0006163</a></td>
+<td align="center">purine nucleotide metabolic process</td>
+<td align="center">12</td>
+<td align="center">6</td>
+<td align="center">2.47</td>
+<td align="center">0.0205</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="molecular-function" class="section level2">
+<h2><span class="header-section-number">4.2</span> Molecular function</h2>
+<pre><code>## 
+## Building most specific GOs .....</code></pre>
+<pre><code>##  ( 477 GO terms found. )</code></pre>
+<pre><code>## 
+## Build GO DAG topology ..........</code></pre>
+<pre><code>##  ( 751 GO terms and 932 relations. )</code></pre>
+<pre><code>## 
+## Annotating nodes ...............</code></pre>
+<pre><code>##  ( 389 genes annotated to the GO terms. )</code></pre>
+<pre><code>## 
+##           -- Classic Algorithm -- 
+## 
+##       the algorithm is scoring 276 nontrivial nodes
+##       parameters: 
+##           test statistic: fisher</code></pre>
+<table>
+<caption>MF</caption>
+<colgroup>
+<col width="13%" />
+<col width="32%" />
+<col width="12%" />
+<col width="14%" />
+<col width="11%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">GO.ID</th>
+<th align="center">Term</th>
+<th align="center">Annotated</th>
+<th align="center">Significant</th>
+<th align="center">Expected</th>
+<th align="center">classicFisher</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><a href="GO:0016491" class="uri">GO:0016491</a></td>
+<td align="center">oxidoreductase activity</td>
+<td align="center">16</td>
+<td align="center">8</td>
+<td align="center">3.17</td>
+<td align="center">0.0055</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0050662" class="uri">GO:0050662</a></td>
+<td align="center">coenzyme binding</td>
+<td align="center">6</td>
+<td align="center">4</td>
+<td align="center">1.19</td>
+<td align="center">0.0156</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0008093" class="uri">GO:0008093</a></td>
+<td align="center">cytoskeletal adaptor activity</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.0388</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0015078" class="uri">GO:0015078</a></td>
+<td align="center">hydrogen ion transmembrane transporter a…</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.0388</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0016810" class="uri">GO:0016810</a></td>
+<td align="center">hydrolase activity, acting on carbon-nit…</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.0388</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0016811" class="uri">GO:0016811</a></td>
+<td align="center">hydrolase activity, acting on carbon-nit…</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.0388</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0033218" class="uri">GO:0033218</a></td>
+<td align="center">amide binding</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.0388</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0042277" class="uri">GO:0042277</a></td>
+<td align="center">peptide binding</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.0388</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0051287" class="uri">GO:0051287</a></td>
+<td align="center">NAD binding</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.0388</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0048037" class="uri">GO:0048037</a></td>
+<td align="center">cofactor binding</td>
+<td align="center">9</td>
+<td align="center">4</td>
+<td align="center">1.78</td>
+<td align="center">0.0806</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="cellular-component" class="section level2">
+<h2><span class="header-section-number">4.3</span> Cellular component</h2>
+<pre><code>## 
+## Building most specific GOs .....</code></pre>
+<pre><code>##  ( 299 GO terms found. )</code></pre>
+<pre><code>## 
+## Build GO DAG topology ..........</code></pre>
+<pre><code>##  ( 544 GO terms and 1095 relations. )</code></pre>
+<pre><code>## 
+## Annotating nodes ...............</code></pre>
+<pre><code>##  ( 406 genes annotated to the GO terms. )</code></pre>
+<pre><code>## 
+##           -- Classic Algorithm -- 
+## 
+##       the algorithm is scoring 268 nontrivial nodes
+##       parameters: 
+##           test statistic: fisher</code></pre>
+<table>
+<caption>CC</caption>
+<colgroup>
+<col width="13%" />
+<col width="33%" />
+<col width="12%" />
+<col width="14%" />
+<col width="11%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">GO.ID</th>
+<th align="center">Term</th>
+<th align="center">Annotated</th>
+<th align="center">Significant</th>
+<th align="center">Expected</th>
+<th align="center">classicFisher</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><a href="GO:0005739" class="uri">GO:0005739</a></td>
+<td align="center">mitochondrion</td>
+<td align="center">44</td>
+<td align="center">18</td>
+<td align="center">8.89</td>
+<td align="center">0.00068</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0044429" class="uri">GO:0044429</a></td>
+<td align="center">mitochondrial part</td>
+<td align="center">19</td>
+<td align="center">10</td>
+<td align="center">3.84</td>
+<td align="center">0.00129</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0005740" class="uri">GO:0005740</a></td>
+<td align="center">mitochondrial envelope</td>
+<td align="center">14</td>
+<td align="center">7</td>
+<td align="center">2.83</td>
+<td align="center">0.01088</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0031966" class="uri">GO:0031966</a></td>
+<td align="center">mitochondrial membrane</td>
+<td align="center">14</td>
+<td align="center">7</td>
+<td align="center">2.83</td>
+<td align="center">0.01088</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0005743" class="uri">GO:0005743</a></td>
+<td align="center">mitochondrial inner membrane</td>
+<td align="center">11</td>
+<td align="center">6</td>
+<td align="center">2.22</td>
+<td align="center">0.01114</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0044444" class="uri">GO:0044444</a></td>
+<td align="center">cytoplasmic part</td>
+<td align="center">183</td>
+<td align="center">46</td>
+<td align="center">36.96</td>
+<td align="center">0.01709</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0019866" class="uri">GO:0019866</a></td>
+<td align="center">organelle inner membrane</td>
+<td align="center">12</td>
+<td align="center">6</td>
+<td align="center">2.42</td>
+<td align="center">0.01870</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0044455" class="uri">GO:0044455</a></td>
+<td align="center">mitochondrial membrane part</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.81</td>
+<td align="center">0.02729</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0016469" class="uri">GO:0016469</a></td>
+<td align="center">proton-transporting two-sector ATPase co…</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.04039</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0033177" class="uri">GO:0033177</a></td>
+<td align="center">proton-transporting two-sector ATPase co…</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.04039</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

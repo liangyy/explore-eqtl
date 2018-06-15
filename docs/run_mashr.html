@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>Run mashr on GTEx z-scores</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Explore eQTL</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/liangyy/explore-eqtl">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Run mashr on GTEx z-scores</h1>
+<h4 class="date"><em>14 June, 2018</em></h4>
+
+</div>
+
+
+<div id="set-up" class="section level1">
+<h1><span class="header-section-number">1</span> Set up</h1>
+<pre class="r"><code>source(&#39;../scripts/mylib.R&#39;)
+library(ashr)
+library(mashr)
+library(ExtremeDeconvolution)
+library(ggplot2)
+library(reshape2)</code></pre>
+</div>
+<div id="read-data" class="section level1">
+<h1><span class="header-section-number">2</span> Read data</h1>
+<pre class="r"><code>## get estimated gtex effect size and standard deviation
+con &lt;- gzcon(url(&#39;https://github.com/stephenslab/gtexresults/raw/master/data/MatrixEQTLSumStats.Portable.Z.rds&#39;))
+data &lt;- readRDS(con)
+close(con)
+strong.b &lt;- data$test.b
+strong.s &lt;- data$test.s
+random.b &lt;- data$random.b
+random.s &lt;- data$random.s
+dim(strong.b)</code></pre>
+<pre><code>## [1] 16069    44</code></pre>
+<pre class="r"><code>dim(strong.s)</code></pre>
+<pre><code>## [1] 16069    44</code></pre>
+<pre class="r"><code>dim(random.b)</code></pre>
+<pre><code>## [1] 20000    44</code></pre>
+<pre class="r"><code>dim(random.s)</code></pre>
+<pre><code>## [1] 20000    44</code></pre>
+<pre class="r"><code>## get gtex color
+gtex.color &lt;- read.table(url(&#39;https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt&#39;), sep = &#39;\t&#39;, comment.char = &#39;&#39;)
+gtex.color &lt;- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
+dim(gtex.color)</code></pre>
+<pre><code>## [1] 44  2</code></pre>
+<pre class="r"><code>tissue.color &lt;- as.character(gtex.color[,2])</code></pre>
+</div>
+<div id="run-mash" class="section level1">
+<h1><span class="header-section-number">3</span> Run mash</h1>
+<p>Followed the steps in <a href="https://stephenslab.github.io/mashr/articles/eQTL_outline.html">eQTL analysis outline of <code>mashr</code></a></p>
+<div id="correlation-structure" class="section level2">
+<h2><span class="header-section-number">3.1</span> Correlation structure</h2>
+<pre class="r"><code>data.temp &lt;- mash_set_data(random.b, random.s, alpha = 1)
+Vhat &lt;- estimate_null_correlation(data.temp)
+rm(data.temp)
+dim(Vhat)</code></pre>
+</div>
+<div id="create-main-data-objects" class="section level2">
+<h2><span class="header-section-number">3.2</span> Create main data objects</h2>
+<pre class="r"><code>data.random &lt;- mash_set_data(random.b, random.s, V = Vhat, alpha = 1)
+data.strong &lt;- mash_set_data(strong.b, strong.s, V = Vhat, alpha = 1)</code></pre>
+</div>
+<div id="data-driven-covariances" class="section level2">
+<h2><span class="header-section-number">3.3</span> Data driven covariances</h2>
+<pre class="r"><code>U.pca &lt;- cov_pca(data.strong, 5)
+U.ed &lt;- cov_ed(data.strong, U.pca)</code></pre>
+</div>
+<div id="canonical-covariance" class="section level2">
+<h2><span class="header-section-number">3.4</span> Canonical covariance</h2>
+<pre class="r"><code>U.c &lt;- cov_canonical(data.random)</code></pre>
+</div>
+<div id="run-mashr" class="section level2">
+<h2><span class="header-section-number">3.5</span> Run mashr</h2>
+<pre class="r"><code>model &lt;- mash(data.random, Ulist = c(U.ed, U.c), outputlevel = 1)</code></pre>
+<pre><code> - Computing 20000 x 1101 likelihood matrix.
+ - Likelihood calculations took 110.50 seconds.
+ - Fitting model with 1101 mixture components.
+optmethod = &quot;mixIP&quot; requires REBayes package; switching to optmethod = &quot;mixEM&quot; - Model fitting took 1984.37 seconds.</code></pre>
+</div>
+<div id="compute-posterior" class="section level2">
+<h2><span class="header-section-number">3.6</span> Compute posterior</h2>
+<pre class="r"><code>m.strong &lt;- mash(data.strong, g = get_fitted_g(model), fixg = TRUE)</code></pre>
+<pre><code> - Computing 16069 x 1101 likelihood matrix.
+ - Likelihood calculations took 43.08 seconds.
+ - Computing posterior matrices.
+ - Computation allocated took 7.17 seconds.
+FIXME: &#39;compute_posterior_matrices&#39; in Rcpp does not transfer EZ to EE</code></pre>
+</div>
+<div id="save-result" class="section level2">
+<h2><span class="header-section-number">3.7</span> Save result</h2>
+<pre class="r"><code>saveRDS(list(model = model, posterior = m.strong), file = &#39;../output/gtex_mash.rds&#39;)</code></pre>
+</div>
+</div>
+<div id="plot-sharing" class="section level1">
+<h1><span class="header-section-number">4</span> Plot sharing</h1>
+<pre class="r"><code>share &lt;- get_pairwise_sharing(m.strong)
+ntissue &lt;- dim(share)[1]
+colnames(share) &lt;- 1 : ntissue
+row.names(share) &lt;- 1 : ntissue
+df.share &lt;- melt(get_upper_tri(share), na.rm = TRUE)
+colnames(df.share) &lt;- c(&#39;tissue1&#39;, &#39;tissue2&#39;, &#39;sharing&#39;)
+df.share$tissue1 &lt;- colorGTEx(df.share$tissue1, gtex.color[, 1], ntissue)
+df.share$tissue2 &lt;- colorGTEx(df.share$tissue2, gtex.color[, 1], ntissue)
+p &lt;- ggplot() + 
+  geom_tile(data = df.share, aes(x = tissue1, y = tissue2, fill = sharing), color = &#39;white&#39;, size = 2) +
+  scale_fill_gradient2(midpoint = 0.7, low = &quot;blue&quot;, mid = &quot;white&quot;, high = &quot;red&quot;, space = &quot;Lab&quot; ) + 
+  geom_text(aes(x = 1 : ntissue + 0.5, y= 1 : ntissue - 0.5, label = gtex.color[,1], color = factor(gtex.color[,1])), hjust = 0, angle = -45) + 
+  coord_equal(xlim = c(0, 51), ylim = c(-7, 44)) +
+  scale_color_manual(values = tissue.color, guide = FALSE)
+p &lt;- p +
+  theme_bw() +
+  theme(
+    axis.line = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank()) 
+p</code></pre>
+<p><img src="run_mashr_files/figure-html/unnamed-chunk-128-1.png" width="1248" /></p>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

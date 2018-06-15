@@ -297,7 +297,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Run flashr on GTEx z-scores</h1>
-<h4 class="date"><em>13 June, 2018</em></h4>
+<h4 class="date"><em>14 June, 2018</em></h4>
 
 </div>
 
@@ -317,7 +317,8 @@ close(con)
 strong.z &lt;- data$test.z
 dim(strong.z)</code></pre>
 <pre><code>## [1] 16069    44</code></pre>
-<pre class="r"><code>## get gtex color
+<pre class="r"><code>gene.names &lt;- row.names(strong.z)
+## get gtex color
 gtex.color &lt;- read.table(url(&#39;https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt&#39;), sep = &#39;\t&#39;, comment.char = &#39;&#39;)
 gtex.color &lt;- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
 dim(gtex.color)</code></pre>
@@ -352,7 +353,7 @@ dim(gtex.color)</code></pre>
 <pre><code>## fitting factor/loading 23</code></pre>
 <pre class="r"><code>pve.gb &lt;- flash_get_pve(f.gb)
 barplot(pve.gb, main = &#39;PVE of factor&#39;, names.arg = 1 : length(pve.gb))</code></pre>
-<p><img src="run_flashr_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="run_flashr_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 <pre class="r"><code>ldf.gb &lt;- flash_get_ldf(f.gb)
 f &lt;- ldf.gb$f
 dim(f)</code></pre>
@@ -374,11 +375,12 @@ ggplot(f.df, aes(x = tissue, y = value, fill = factor(tissue))) +
   labs(title = &quot;GTEx data&quot;, y = &quot;factor values&quot; ,x = &quot;tissues&quot;, fill=&quot;tissue&quot;) +
   facet_wrap(~ factor, ncol = 2, scales = &quot;free_y&quot;) +
   guides(fill = guide_legend(ncol = 1, keyheight = 0.8, keywidth = 0.3))</code></pre>
-<p><img src="run_flashr_files/figure-html/unnamed-chunk-3-1.png" width="1248" /></p>
+<p><img src="run_flashr_files/figure-html/unnamed-chunk-9-1.png" width="1248" /></p>
 </div>
 <div id="save-calculation-result" class="section level1">
 <h1><span class="header-section-number">5</span> Save calculation result</h1>
-<pre class="r"><code>saveRDS(f.gb, file = &#39;../output/gtex_flash.rds&#39;)</code></pre>
+<pre class="r"><code>saveRDS(f.gb, file = &#39;../output/gtex_flash.rds&#39;)
+write.table(gene.names, file = &#39;../output/strong_eqtl_names.txt&#39;, quote = F, row.names = F, col.names = F)</code></pre>
 </div>
 
 
