@@ -12,3 +12,4 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 # Preliminary analysis
 
 * EQTLs with top loading for "heart factor" [link](preliminary_flash_mash.html)
+* Position to enhancer for eQTLs with strong loading on "heart factor" [link](position_to_enhancer.html)

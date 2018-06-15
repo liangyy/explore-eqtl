@@ -1,0 +1,59 @@
+---
+title: "Relative position to active enhancer"
+# author: Yanyu Liang
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+# Set up
+
+```{r setup}
+source('../scripts/mylib.R')
+library(ggplot2)
+library(mashr)
+library(dplyr)
+library(pander)
+panderOptions('knitr.auto.asis', FALSE)
+panderOptions('table.split.table', Inf)
+set.seed(2018)
+```
+
+# Read data
+
+This section is to explore the relationship between loading on "heart factor" and distance to heart active enhancer. Fantom enhancer is used. In particular, the heart enhancer is extracted using [SlideBase Human Enhancer Selector](http://slidebase.binf.ku.dk/human_enhancers/selector) where the extraction is restricted to heart with cutoffs 80-100%, 5-10%, 0% (*i.e.* the expression fraction across all tissue).
+
+```{r}
+flash <- readRDS('../output/gtex_flash.rds')
+eqtl_annotated <- read.table('../output/strong_eqtl_annotated.txt.gz', header = T)
+eqtl_annotated.dup <- duplicated(eqtl_annotated$ensembl_gene_id)
+eqtl_annotated <- eqtl_annotated[!eqtl_annotated.dup, ]
+enhancer_80_100 <- read.table('../data/enhancer_data_fantom_heart_80_100.bed', sep = '\t')
+enhancer_5_10 <- read.table('../data/enhancer_data_fantom_heart_5_10.bed', sep = '\t')
+enhancer_0 <- read.table('../data/enhancer_data_fantom_heart_0.bed', sep = '\t')
+nenhancer <- nrow(enhancer_80_100)
+enhancer_5_10 <- enhancer_5_10[sample(1 : nrow(enhancer_5_10), nenhancer, replace = F), ]
+enhancer_0 <- enhancer_0[sample(1 : nrow(enhancer_0), nenhancer, replace = F), ]
+## get gtex color
+gtex.color <- read.table(url('https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt'), sep = '\t', comment.char = '')
+gtex.color <- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
+tissue.color <- as.character(gtex.color[,2])
+ntissue <- nrow(gtex.color)
+```
+
+# Distance to enhancer and loading
+
+Factor 5 is used (referred as "heart factor").
+
+```{r}
+l.five <- flash$EL[, 5]
+l.five <- l.five[eqtl_annotated$idx]
+eqtl_annotated$enhancer_80_100_distance <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_80_100)
+eqtl_annotated$enhancer_5_10_distance <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_5_10)
+eqtl_annotated$enhancer_0_distance <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_0)
+eqtl_annotated$loading <- l.five
+eqtl_annotated$tss_distance <- getDistanceToTSS(cbind(eqtl_annotated$eqtl_chr, eqtl_annotated$eqtl_start, eqtl_annotated$chromosome_name, eqtl_annotated$start_position, eqtl_annotated$end_position, eqtl_annotated$strand))
+df <- eqtl_annotated[, c('tss_distance', 'enhancer_80_100_distance', 'enhancer_5_10_distance', 'enhancer_0_distance', 'loading')]
+df <- melt(df, id.vars = 'loading')
+ggplot(df) + geom_point(aes(x = loading, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()
+```
+
+It seems that strong loading on "heart factor" does not correspond to closer distance to fantom expressed enhancer in heart.

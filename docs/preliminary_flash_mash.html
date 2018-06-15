@@ -297,7 +297,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Preliminary analysis of flash and mash result</h1>
-<h4 class="date"><em>14 June, 2018</em></h4>
+<h4 class="date"><em>15 June, 2018</em></h4>
 
 </div>
 
@@ -310,6 +310,8 @@ library(biomaRt)
 library(dplyr)
 library(topGO)
 library(pander)
+library(rmeta)
+library(reshape2)
 panderOptions(&#39;knitr.auto.asis&#39;, FALSE)
 panderOptions(&#39;table.split.table&#39;, Inf)</code></pre>
 </div>
@@ -317,7 +319,12 @@ panderOptions(&#39;table.split.table&#39;, Inf)</code></pre>
 <h1><span class="header-section-number">2</span> Read data</h1>
 <pre class="r"><code>flash &lt;- readRDS(&#39;../output/gtex_flash.rds&#39;)
 mash &lt;- readRDS(&#39;../output/gtex_mash.rds&#39;)
-eqtl &lt;- read.table(&#39;../output/strong_eqtl_names.txt&#39;)$V1</code></pre>
+eqtl &lt;- read.table(&#39;../output/strong_eqtl_names.txt&#39;)$V1
+## get gtex color
+gtex.color &lt;- read.table(url(&#39;https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt&#39;), sep = &#39;\t&#39;, comment.char = &#39;&#39;)
+gtex.color &lt;- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
+tissue.color &lt;- as.character(gtex.color[,2])
+ntissue &lt;- nrow(gtex.color)</code></pre>
 </div>
 <div id="factor-5" class="section level1">
 <h1><span class="header-section-number">3</span> Factor 5</h1>
@@ -326,8 +333,9 @@ eqtl &lt;- read.table(&#39;../output/strong_eqtl_names.txt&#39;)$V1</code></pre>
 dim(l)</code></pre>
 <pre><code>## [1] 16069    23</code></pre>
 <pre class="r"><code>l.five &lt;- l[, 5]
+top.tissue.idx &lt;- order(abs(flash$EF[, 5]), decreasing = T)[1 : 3]
 hist(l.five)</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <pre class="r"><code>top.ten.idx &lt;- order(l.five, decreasing = T)[1:10]
 bottom.ten.idx &lt;- order(l.five, decreasing = F)[1:10]</code></pre>
 <div id="ten-eqtl-with-highest-loading" class="section level2">
@@ -336,7 +344,7 @@ bottom.ten.idx &lt;- order(l.five, decreasing = F)[1:10]</code></pre>
 for(i in 1 : 10) {
   mash_plot_meta(mash$posterior, top.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
 }</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-3-1.png" width="768" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-5-1.png" width="768" /></p>
 </div>
 <div id="ten-eqtl-with-lowest-loading" class="section level2">
 <h2><span class="header-section-number">3.2</span> Ten eQTL with lowest loading</h2>
@@ -344,11 +352,12 @@ for(i in 1 : 10) {
 for(i in 1 : 10) {
   mash_plot_meta(mash$posterior, bottom.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
 }</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-4-1.png" width="768" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-6-1.png" width="768" /></p>
 </div>
 </div>
-<div id="eqtl-and-gene" class="section level1">
-<h1><span class="header-section-number">4</span> EQTL and gene</h1>
+<div id="gene-ontology-enrichment-analysis" class="section level1">
+<h1><span class="header-section-number">4</span> Gene ontology enrichment analysis</h1>
+<p>EQTLs with top and bottom loadings (50 respectively) are used as positive set and 500 eQTLs with most modest loading as background set.</p>
 <pre class="r"><code>annotateEQTL &lt;- function(eqtl, idx, ensembl) {
   ensg &lt;- data.frame(t(sapply(eqtl[idx], function(str) {
     temp &lt;- strsplit(as.character(str), &#39;_&#39;)[[1]]
@@ -358,6 +367,7 @@ for(i in 1 : 10) {
     return(c(strsplit(x, &#39;.&#39;, fixed = T)[[1]][1], chr, s))
   })))
   colnames(ensg) &lt;- c(&#39;ensembl_gene_id&#39;, &#39;eqtl_chr&#39;, &#39;eqtl_start&#39;)
+  ensg$idx &lt;- idx
   ensg$ensembl_gene_id &lt;- as.character(ensg$ensembl_gene_id)
   re &lt;- getBM(
     attributes = c(&#39;ensembl_gene_id&#39;, &#39;hgnc_symbol&#39;, &#39;chromosome_name&#39;, &#39;start_position&#39;, &#39;end_position&#39;, &#39;strand&#39;, &#39;go_id&#39;, &#39;name_1006&#39;, &#39;uniprot_genename&#39;, &#39;uniprot_swissprot_accession&#39;), 
@@ -375,8 +385,10 @@ genGene2GO &lt;- function(g2g, re) {
   return(g2g)
 }
 ensembl &lt;- useMart(biomart=&quot;ENSEMBL_MART_ENSEMBL&quot;, host=&quot;feb2014.archive.ensembl.org&quot;, path=&quot;/biomart/martservice&quot;, dataset=&quot;hsapiens_gene_ensembl&quot;)
-positive.re &lt;- annotateEQTL(eqtl, c(order(l.five, decreasing = T)[1:50], order(l.five, decreasing = F)[1:50]), ensembl)
-control.re &lt;- annotateEQTL(eqtl, order(abs(l.five), decreasing = F)[1:500], ensembl)
+positive.idx &lt;- c(order(l.five, decreasing = T)[1:50], order(l.five, decreasing = F)[1:50])
+control.idx &lt;- order(abs(l.five), decreasing = F)[1:500]
+positive.re &lt;- annotateEQTL(eqtl, positive.idx, ensembl)
+control.re &lt;- annotateEQTL(eqtl, control.idx, ensembl)
 gene2go &lt;- list()
 gene2go &lt;- genGene2GO(gene2go, positive.re)
 gene2go &lt;- genGene2GO(gene2go, control.re)
@@ -756,7 +768,94 @@ for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
 </tr>
 </tbody>
 </table>
+<p>It turns out that these top genes are enriched in cellular respiration process.</p>
 </div>
+</div>
+<div id="overview-of-selected-gene-sets" class="section level1">
+<h1><span class="header-section-number">5</span> Overview of selected gene sets</h1>
+<pre class="r"><code>df &lt;- data.frame(loading = l.five[c(positive.idx, control.idx)], label = c(rep(&#39;positive&#39;, length(positive.idx)), rep(&#39;control&#39;, length(control.idx))))
+ggplot(df) + geom_histogram(aes(x = loading, group = label, fill = label), binwidth = 1) + ggtitle(&#39;Histogram of loading&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<div id="posterior-mean-comparison-across-top-three-tissues" class="section level2">
+<h2><span class="header-section-number">5.1</span> Posterior mean comparison across top three tissues</h2>
+<pre class="r"><code>df.load &lt;- mash$posterior$result$PosteriorMean[positive.idx, top.tissue.idx]
+pairs(df.load, main = &#39;Pairwise comparison of top three tissues in positive set&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code>df.load &lt;- mash$posterior$result$PosteriorMean[control.idx, top.tissue.idx]
+pairs(df.load, main = &#39;Pairwise comparison of top three tissues in control set&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
+<p>So, it seems that the ones with strong loading on factor 5 are driven by tissue specificity but not strong correlation between these top tissues.</p>
+</div>
+<div id="posterior-effect-size-of-control-eqtls" class="section level2">
+<h2><span class="header-section-number">5.2</span> Posterior effect size of control eQTLs</h2>
+<pre class="r"><code>random.idx &lt;- sample(control.idx, 10, replace = F) 
+par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, random.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
+}</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-10-1.png" width="768" /></p>
+</div>
+</div>
+<div id="cellular-respiration-cr" class="section level1">
+<h1><span class="header-section-number">6</span> Cellular respiration (CR)</h1>
+<p>GO term ‘<a href="GO:0055114" class="uri">GO:0055114</a>’ is used (represent oxidation-reduction process)</p>
+<div id="loading" class="section level2">
+<h2><span class="header-section-number">6.1</span> Loading</h2>
+<p>Contrast eQTL in cellular respiration with the ones unrelated to cellular respiration on the loading of factor 5.</p>
+<pre class="r"><code>re.go &lt;- annotateEQTL(eqtl, 1 : length(eqtl), ensembl)
+cr.gene &lt;- re.go[re.go$go_id == &#39;GO:0055114&#39;, &#39;idx&#39;]
+label &lt;- rep(&#39;Not CR&#39;, length(l.five))
+label[unique(cr.gene)] &lt;- &#39;CR&#39;
+df &lt;- data.frame(loading = l.five, label = label)
+ggplot(df, aes(x = abs(loading), color = label)) + stat_ecdf()</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<pre class="r"><code>ks.test(abs(df$loading[df$label == &#39;Not CR&#39;]), abs(df$loading[df$label == &#39;CR&#39;]), alternative = &#39;g&#39;)</code></pre>
+<pre><code>## 
+##  Two-sample Kolmogorov-Smirnov test
+## 
+## data:  abs(df$loading[df$label == &quot;Not CR&quot;]) and abs(df$loading[df$label == &quot;CR&quot;])
+## D^+ = 0.084122, p-value = 0.008762
+## alternative hypothesis: the CDF of x lies above that of y</code></pre>
+<pre class="r"><code>wilcox.test(abs(df$loading[df$label == &#39;Not CR&#39;]), abs(df$loading[df$label == &#39;CR&#39;]), alternative = &#39;l&#39;)</code></pre>
+<pre><code>## 
+##  Wilcoxon rank sum test with continuity correction
+## 
+## data:  abs(df$loading[df$label == &quot;Not CR&quot;]) and abs(df$loading[df$label == &quot;CR&quot;])
+## W = 2373100, p-value = 9.74e-05
+## alternative hypothesis: true location shift is less than 0</code></pre>
+<p>The result supports the hypothesis that the eQTLs with strong loading on factor 5 (most likely to be tissue-specific eQTLs in top tissues, <em>i.e.</em> heart and skeletal muscle) are enriched in celluar respiration process. It makes sense since muscle tissue needs huge amount of ATP which needs highly active celluar repiration.</p>
+</div>
+<div id="effect-size" class="section level2">
+<h2><span class="header-section-number">6.2</span> Effect size</h2>
+<p>Contrast effect size</p>
+<pre class="r"><code>df &lt;- data.frame(mash$posterior$result$PosteriorMean[, ])
+df.se &lt;- data.frame(mash$posterior$result$PosteriorSD[, ])
+col &lt;- colnames(df)
+df.sig &lt;- data.frame(abs(df) &gt; df.se * 1.96)
+df.sig$label &lt;- label
+df.sig &lt;- melt(df.sig, id.vars = &#39;label&#39;)
+ggplot(df.sig) +
+  geom_bar(aes(x = variable, group = value, color = value), position = &quot;fill&quot;) +
+  facet_grid(label~.) +
+  scale_fill_manual(values = tissue.color, guide = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, color = tissue.color)) +
+  ggtitle(&#39;Proportion of non-zero effect gene&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre class="r"><code>df.prop &lt;- df.sig %&gt;% group_by(variable, label) %&gt;%
+  summarise(prop = sum(value) / length(value))
+df &lt;- data.frame(CR = df.prop$prop[df.prop$label == &#39;CR&#39;], NCR = df.prop$prop[df.prop$label == &#39;Not CR&#39;], tissue = df.prop$variable[df.prop$label == &#39;CR&#39;])
+ggplot(df) + geom_point(aes(x = NCR, y = CR, color = tissue)) +
+  scale_color_manual(values = tissue.color, guide = FALSE) + geom_abline(slope = 1, intercept = 0) +
+  ggtitle(&#39;Proportion of non-zero effect gene (CR vs not CR)&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
+<p>Overall, genes involved in cellular respiration is more likely to have non-zero posterior effect (95% credible interval).</p>
+</div>
+</div>
+<div id="save-annotated-eqtls" class="section level1">
+<h1><span class="header-section-number">7</span> Save annotated eQTLs</h1>
+<pre class="r"><code>gz1 &lt;- gzfile(&quot;../output/strong_eqtl_annotated.txt.gz&quot;, &quot;w&quot;)
+write.table(re.go, gz1, row.names = F, col.names = T)
+close(gz1)</code></pre>
 </div>
 
 

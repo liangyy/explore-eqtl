@@ -11,7 +11,7 @@
 
 
 
-<title>Home</title>
+<title>Relative position to active enhancer</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -296,25 +296,57 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Home</h1>
+<h1 class="title toc-ignore">Relative position to active enhancer</h1>
 <h4 class="date"><em>15 June, 2018</em></h4>
 
 </div>
 
 
-<div id="re-run-mash-and-flash" class="section level1">
-<h1><span class="header-section-number">1</span> Re-run <a href="https://github.com/stephenslab/mashr"><code>mash</code></a> and <a href="https://github.com/stephenslab/flashr"><code>flash</code></a></h1>
-<ul>
-<li>See flash result <a href="run_flashr.html">here</a></li>
-<li>See mash result <a href="run_mashr.html">here</a></li>
-</ul>
+<div id="set-up" class="section level1">
+<h1><span class="header-section-number">1</span> Set up</h1>
+<pre class="r"><code>source(&#39;../scripts/mylib.R&#39;)
+library(ggplot2)
+library(mashr)
+library(dplyr)
+library(pander)
+panderOptions(&#39;knitr.auto.asis&#39;, FALSE)
+panderOptions(&#39;table.split.table&#39;, Inf)
+set.seed(2018)</code></pre>
 </div>
-<div id="preliminary-analysis" class="section level1">
-<h1><span class="header-section-number">2</span> Preliminary analysis</h1>
-<ul>
-<li>EQTLs with top loading for “heart factor” <a href="preliminary_flash_mash.html">link</a></li>
-<li>Position to enhancer for eQTLs with strong loading on “heart factor” <a href="position_to_enhancer.html">link</a></li>
-</ul>
+<div id="read-data" class="section level1">
+<h1><span class="header-section-number">2</span> Read data</h1>
+<p>This section is to explore the relationship between loading on “heart factor” and distance to heart active enhancer. Fantom enhancer is used. In particular, the heart enhancer is extracted using <a href="http://slidebase.binf.ku.dk/human_enhancers/selector">SlideBase Human Enhancer Selector</a> where the extraction is restricted to heart with cutoffs 80-100%, 5-10%, 0% (<em>i.e.</em> the expression fraction across all tissue).</p>
+<pre class="r"><code>flash &lt;- readRDS(&#39;../output/gtex_flash.rds&#39;)
+eqtl_annotated &lt;- read.table(&#39;../output/strong_eqtl_annotated.txt.gz&#39;, header = T)
+eqtl_annotated.dup &lt;- duplicated(eqtl_annotated$ensembl_gene_id)
+eqtl_annotated &lt;- eqtl_annotated[!eqtl_annotated.dup, ]
+enhancer_80_100 &lt;- read.table(&#39;../data/enhancer_data_fantom_heart_80_100.bed&#39;, sep = &#39;\t&#39;)
+enhancer_5_10 &lt;- read.table(&#39;../data/enhancer_data_fantom_heart_5_10.bed&#39;, sep = &#39;\t&#39;)
+enhancer_0 &lt;- read.table(&#39;../data/enhancer_data_fantom_heart_0.bed&#39;, sep = &#39;\t&#39;)
+nenhancer &lt;- nrow(enhancer_80_100)
+enhancer_5_10 &lt;- enhancer_5_10[sample(1 : nrow(enhancer_5_10), nenhancer, replace = F), ]
+enhancer_0 &lt;- enhancer_0[sample(1 : nrow(enhancer_0), nenhancer, replace = F), ]
+## get gtex color
+gtex.color &lt;- read.table(url(&#39;https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt&#39;), sep = &#39;\t&#39;, comment.char = &#39;&#39;)
+gtex.color &lt;- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
+tissue.color &lt;- as.character(gtex.color[,2])
+ntissue &lt;- nrow(gtex.color)</code></pre>
+</div>
+<div id="distance-to-enhancer-and-loading" class="section level1">
+<h1><span class="header-section-number">3</span> Distance to enhancer and loading</h1>
+<p>Factor 5 is used (referred as “heart factor”).</p>
+<pre class="r"><code>l.five &lt;- flash$EL[, 5]
+l.five &lt;- l.five[eqtl_annotated$idx]
+eqtl_annotated$enhancer_80_100_distance &lt;- getDistance(cbind(paste0(&#39;chr&#39;, eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_80_100)
+eqtl_annotated$enhancer_5_10_distance &lt;- getDistance(cbind(paste0(&#39;chr&#39;, eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_5_10)
+eqtl_annotated$enhancer_0_distance &lt;- getDistance(cbind(paste0(&#39;chr&#39;, eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_0)
+eqtl_annotated$loading &lt;- l.five
+eqtl_annotated$tss_distance &lt;- getDistanceToTSS(cbind(eqtl_annotated$eqtl_chr, eqtl_annotated$eqtl_start, eqtl_annotated$chromosome_name, eqtl_annotated$start_position, eqtl_annotated$end_position, eqtl_annotated$strand))
+df &lt;- eqtl_annotated[, c(&#39;tss_distance&#39;, &#39;enhancer_80_100_distance&#39;, &#39;enhancer_5_10_distance&#39;, &#39;enhancer_0_distance&#39;, &#39;loading&#39;)]
+df &lt;- melt(df, id.vars = &#39;loading&#39;)
+ggplot(df) + geom_point(aes(x = loading, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()</code></pre>
+<p><img src="position_to_enhancer_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>It seems that strong loading on “heart factor” does not correspond to closer distance to fantom expressed enhancer in heart.</p>
 </div>
 
 
