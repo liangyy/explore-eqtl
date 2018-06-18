@@ -2,6 +2,7 @@
 title: "Motif analysis"
 # author: Yanyu Liang
 date: "`r format(Sys.time(), '%d %B, %Y')`"
+bibliography: myref.bib
 ---
 
 # Set up
@@ -19,7 +20,7 @@ set.seed(2018)
 
 In this section, the motif analysis on the promoters of the genes with strong loading on "heart factor" is performed. The motivation is to see whether "tissue-specific" (strong loading on "heart factor") eQTL is driven by tissue-specific promoter. 
 
-```{r}
+```{r, eval=FALSE}
 flash <- readRDS('../output/gtex_flash.rds')
 eqtl_annotated <- read.table('../output/strong_eqtl_annotated.txt.gz', header = T)
 eqtl_annotated.dup <- duplicated(eqtl_annotated$ensembl_gene_id)
@@ -30,7 +31,7 @@ eqtl_annotated <- eqtl_annotated[!eqtl_annotated.dup, ]
 
 Promoter is defined as the 1 kb region upstream of TSS.
 
-```{r}
+```{r, eval=FALSE}
 window.size <- 1000
 l.five <- flash$EL[, 5]
 l.one <- flash$EL[, 1]
@@ -57,5 +58,46 @@ write.fasta(as.list(df.sub.neg$seq), df.sub.neg$idx, file.out = '../output/motif
 
 # MEME Suite result (AME)
 
-See output file [here](https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm)
+AME performs enrichment analysis by comparing the occurence of motif between positive sequence set and control sequence set. Here, the motifs are from motif database, HOCOMOCOv11 full HUMAN. See output file [here](https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm)
 
+## TFDP1
+
+The relation of TFDP1 and heart/muscle tissue is not found but TFDP2 shows high expression level in muscle and heart tissue. Also, TFDP2 is involved in heart development (related to cell cycle).  
+
+## EGR2
+
+No evidence has been found.
+
+## SP1 
+
+[@flesch2001trail] reported that sp1 is involved in the tissue-specific activation of promoter.
+
+## EGR1
+
+Many studies have shown that EGR1 plays a role in cardic myocyte.
+
+# MEME Suite result (FIMO)
+
+FIMO scans and scores the sequences by given motif. Here, sp1 is used (JASPAR ID MA0079.1).
+
+```{r}
+pos <- read.table('../output/fimo_f5.positive.tsv', header = T)
+neg <- read.table('../output/fimo_f5.negative.tsv', header = T)
+pos.pmin <- pos %>% group_by(sequence_name) %>%
+  summarise(score = min(p.value))
+neg.pmin <- neg %>% group_by(sequence_name) %>%
+  summarise(score = min(p.value))
+df.sub.order <- df.sub[order(df.sub$idx, decreasing = F), ]
+pos.pmin <- pos.pmin[order(pos.pmin$sequence_name, decreasing = F), ]
+neg.pmin <- neg.pmin[order(neg.pmin$sequence_name, decreasing = F), ]
+df.sub.order$pmin <- NA 
+df.sub.order$pmin[df.sub.order$idx %in% pos.pmin$sequence_name] <- pos.pmin$score
+df.sub.order$pmin[df.sub.order$idx %in% neg.pmin$sequence_name] <- neg.pmin$score
+ggplot(df.sub.order) + geom_boxplot(aes(x = specific, y = pmin, color = specific)) + scale_y_log10() + ggtitle('Q-value vs. loading on factor 5') + geom_jitter(aes(x = specific, y = pmin, color = specific), height = 0)
+wilcox.test(df.sub.order$pmin[df.sub.order$specific], df.sub.order$pmin[!df.sub.order$specific], alternative = 'l')
+ggplot(df.sub.order) + geom_bar(aes(group = is.na(pmin), x = specific, fill = is.na(pmin)), position = "fill") + ggtitle('Fraction of significant hits in positive and control sets') + labs(fill = 'Motif not show', x = 'Control = FALSE, positive = TRUE')
+```
+
+The result indicates that the promoter region of factor 5 specific genes have significantly more sp1 binding sites than general eQTLs (strong loading on 1 but weak loading on 5). So, it seems that the tissue-specific eQTLs for factor 5 are indeed controlled by tissue-specific TFs but it is still questionable about how it is regulated (by promoter or chromatin looping mediated promoter-enhancer interaction). The distance analysis gives no pattern (see [here](position_to_enhancer.html)). 
+
+# References

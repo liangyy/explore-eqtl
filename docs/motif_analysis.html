@@ -347,7 +347,61 @@ write.fasta(as.list(df.sub.neg$seq), df.sub.neg$idx, file.out = &#39;../output/m
 </div>
 <div id="meme-suite-result-ame" class="section level1">
 <h1><span class="header-section-number">4</span> MEME Suite result (AME)</h1>
-<p>See output file <a href="https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm">here</a></p>
+<p>AME performs enrichment analysis by comparing the occurence of motif between positive sequence set and control sequence set. Here, the motifs are from motif database, HOCOMOCOv11 full HUMAN. See output file <a href="https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm">here</a></p>
+<div id="tfdp1" class="section level2">
+<h2><span class="header-section-number">4.1</span> TFDP1</h2>
+<p>The relation of TFDP1 and heart/muscle tissue is not found but TFDP2 shows high expression level in muscle and heart tissue. Also, TFDP2 is involved in heart development (related to cell cycle).</p>
+</div>
+<div id="egr2" class="section level2">
+<h2><span class="header-section-number">4.2</span> EGR2</h2>
+<p>No evidence has been found.</p>
+</div>
+<div id="sp1" class="section level2">
+<h2><span class="header-section-number">4.3</span> SP1</h2>
+<p><span class="citation">(Flesch 2001)</span> reported that sp1 is involved in the tissue-specific activation of promoter.</p>
+</div>
+<div id="egr1" class="section level2">
+<h2><span class="header-section-number">4.4</span> EGR1</h2>
+<p>Many studies have shown that EGR1 plays a role in cardic myocyte.</p>
+</div>
+</div>
+<div id="meme-suite-result-fimo" class="section level1">
+<h1><span class="header-section-number">5</span> MEME Suite result (FIMO)</h1>
+<p>FIMO scans and scores the sequences by given motif. Here, sp1 is used (JASPAR ID MA0079.1).</p>
+<pre class="r"><code>pos &lt;- read.table(&#39;../output/fimo_f5.positive.tsv&#39;, header = T)
+neg &lt;- read.table(&#39;../output/fimo_f5.negative.tsv&#39;, header = T)
+pos.pmin &lt;- pos %&gt;% group_by(sequence_name) %&gt;%
+  summarise(score = min(p.value))
+neg.pmin &lt;- neg %&gt;% group_by(sequence_name) %&gt;%
+  summarise(score = min(p.value))
+df.sub.order &lt;- df.sub[order(df.sub$idx, decreasing = F), ]
+pos.pmin &lt;- pos.pmin[order(pos.pmin$sequence_name, decreasing = F), ]
+neg.pmin &lt;- neg.pmin[order(neg.pmin$sequence_name, decreasing = F), ]
+df.sub.order$pmin &lt;- NA 
+df.sub.order$pmin[df.sub.order$idx %in% pos.pmin$sequence_name] &lt;- pos.pmin$score
+df.sub.order$pmin[df.sub.order$idx %in% neg.pmin$sequence_name] &lt;- neg.pmin$score
+ggplot(df.sub.order) + geom_boxplot(aes(x = specific, y = pmin, color = specific)) + scale_y_log10() + ggtitle(&#39;Q-value vs. loading on factor 5&#39;) + geom_jitter(aes(x = specific, y = pmin, color = specific), height = 0)</code></pre>
+<pre><code>## Warning: Removed 63 rows containing non-finite values (stat_boxplot).</code></pre>
+<pre><code>## Warning: Removed 63 rows containing missing values (geom_point).</code></pre>
+<p><img src="motif_analysis_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>wilcox.test(df.sub.order$pmin[df.sub.order$specific], df.sub.order$pmin[!df.sub.order$specific], alternative = &#39;l&#39;)</code></pre>
+<pre><code>## 
+##  Wilcoxon rank sum test with continuity correction
+## 
+## data:  df.sub.order$pmin[df.sub.order$specific] and df.sub.order$pmin[!df.sub.order$specific]
+## W = 1268, p-value = 0.02392
+## alternative hypothesis: true location shift is less than 0</code></pre>
+<pre class="r"><code>ggplot(df.sub.order) + geom_bar(aes(group = is.na(pmin), x = specific, fill = is.na(pmin)), position = &quot;fill&quot;) + ggtitle(&#39;Fraction of significant hits in positive and control sets&#39;) + labs(fill = &#39;Motif not show&#39;, x = &#39;Control = FALSE, positive = TRUE&#39;)</code></pre>
+<p><img src="motif_analysis_files/figure-html/unnamed-chunk-3-2.png" width="672" /></p>
+<p>The result indicates that the promoter region of factor 5 specific genes have significantly more sp1 binding sites than general eQTLs (strong loading on 1 but weak loading on 5). So, it seems that the tissue-specific eQTLs for factor 5 are indeed controlled by tissue-specific TFs but it is still questionable about how it is regulated (by promoter or chromatin looping mediated promoter-enhancer interaction). The distance analysis gives no pattern (see <a href="position_to_enhancer.html">here</a>).</p>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-flesch2001trail">
+<p>Flesch, Markus. 2001. “On the Trail of Cardiac Specific Transcription Factors.” Elsevier Science.</p>
+</div>
+</div>
 </div>
 
 
