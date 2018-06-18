@@ -1,0 +1,61 @@
+---
+title: "Motif analysis"
+# author: Yanyu Liang
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+# Set up
+
+```{r setup}
+source('../scripts/mylib.R')
+library(ggplot2)
+library(dplyr)
+library(BSgenome.Hsapiens.UCSC.hg19)
+library(seqinr)
+set.seed(2018)
+```
+
+# Read data
+
+In this section, the motif analysis on the promoters of the genes with strong loading on "heart factor" is performed. The motivation is to see whether "tissue-specific" (strong loading on "heart factor") eQTL is driven by tissue-specific promoter. 
+
+```{r}
+flash <- readRDS('../output/gtex_flash.rds')
+eqtl_annotated <- read.table('../output/strong_eqtl_annotated.txt.gz', header = T)
+eqtl_annotated.dup <- duplicated(eqtl_annotated$ensembl_gene_id)
+eqtl_annotated <- eqtl_annotated[!eqtl_annotated.dup, ]
+```
+
+# Extracting promoter
+
+Promoter is defined as the 1 kb region upstream of TSS.
+
+```{r}
+window.size <- 1000
+l.five <- flash$EL[, 5]
+l.one <- flash$EL[, 1]
+l.five <- l.five[eqtl_annotated$idx]
+l.one <- l.one[eqtl_annotated$idx]
+eqtl_annotated$loading_5 <- l.five
+eqtl_annotated$loading_1 <- l.one
+df.sub <- eqtl_annotated[(abs(eqtl_annotated$loading_5) > 5 & abs(eqtl_annotated$loading_1) < 1) | (abs(eqtl_annotated$loading_5) < 1 & abs(eqtl_annotated$loading_1) > 50), ]
+df.sub$specific <- TRUE
+df.sub$specific[(abs(df.sub$loading_5) < 1 & abs(df.sub$loading_1) > 50)] <- FALSE
+df.sub$tss <- df.sub$transcript_start
+df.sub$tss[df.sub$strand == -1] <- df.sub$transcript_end[df.sub$strand == -1]
+tss_up1kb <- df.sub$tss - df.sub$strand * window.size
+df.sub$tss_big <- df.sub$tss
+df.sub$tss_big[df.sub$strand == -1] <- tss_up1kb[df.sub$strand == -1]
+df.sub$tss_small <- tss_up1kb
+df.sub$tss_small[df.sub$strand == -1] <- df.sub$tss[df.sub$strand == -1]
+df.sub$seq <- getFasta(data.frame(paste0('chr', df.sub$chromosome_name), df.sub$tss_small, df.sub$tss_big), BSgenome.Hsapiens.UCSC.hg19)
+df.sub.pos <- df.sub[df.sub$specific, ]
+write.fasta(as.list(df.sub.pos$seq), df.sub.pos$idx, file.out = '../output/motif_analysis_factor_five.positive.fa')
+df.sub.neg <- df.sub[!df.sub$specific, ]
+write.fasta(as.list(df.sub.neg$seq), df.sub.neg$idx, file.out = '../output/motif_analysis_factor_five.negative.fa')
+```
+
+# MEME Suite result (AME)
+
+See output file [here](https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm)
+

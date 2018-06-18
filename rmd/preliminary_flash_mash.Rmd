@@ -81,7 +81,7 @@ annotateEQTL <- function(eqtl, idx, ensembl) {
   ensg$idx <- idx
   ensg$ensembl_gene_id <- as.character(ensg$ensembl_gene_id)
   re <- getBM(
-    attributes = c('ensembl_gene_id', 'hgnc_symbol', 'chromosome_name', 'start_position', 'end_position', 'strand', 'go_id', 'name_1006', 'uniprot_genename', 'uniprot_swissprot_accession'), 
+    attributes = c('ensembl_gene_id', 'hgnc_symbol', 'chromosome_name', 'start_position', 'end_position', 'strand', 'go_id', 'name_1006', 'uniprot_genename', 'uniprot_swissprot_accession', 'transcript_start', 'transcript_end'), 
     filters = 'ensembl_gene_id',
     values = ensg[, 1],
     mart = ensembl)

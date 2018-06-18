@@ -1,0 +1,237 @@
+---
+title: "Preliminary analysis of flash and mash result (factor 2)"
+# author: Yanyu Liang
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+# Set up
+
+```{r setup}
+library(ggplot2)
+library(mashr)
+library(biomaRt)
+library(dplyr)
+library(topGO)
+library(pander)
+library(rmeta)
+library(reshape2)
+panderOptions('knitr.auto.asis', FALSE)
+panderOptions('table.split.table', Inf)
+```
+
+# Read data
+
+```{r}
+flash <- readRDS('../output/gtex_flash.rds')
+mash <- readRDS('../output/gtex_mash.rds')
+eqtl <- read.table('../output/strong_eqtl_names.txt')$V1
+## get gtex color
+gtex.color <- read.table(url('https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt'), sep = '\t', comment.char = '')
+gtex.color <- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
+tissue.color <- as.character(gtex.color[,2])
+ntissue <- nrow(gtex.color)
+```
+
+# Factor 9
+
+See details of factor 9 at [here](run_flashr.html)
+
+```{r}
+l <- flash$EL
+dim(l)
+l.two <- l[, 2]
+top.tissue.idx <- order(abs(flash$EF[, 2]), decreasing = T)[1 : 3]
+hist(l.two)
+top.ten.idx <- order(l.two, decreasing = T)[1:10]
+bottom.ten.idx <- order(l.two, decreasing = F)[1:10]
+```
+
+## Ten eQTL with highest loading
+
+```{r, fig.height = 15, fig.width = 8}
+par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, top.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, ': ', eqtl[i]))
+}
+```
+
+## Ten eQTL with lowest loading
+
+```{r, fig.height = 15, fig.width = 8}
+par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, bottom.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, ': ', eqtl[i]))
+}
+```
+
+# Gene ontology enrichment analysis
+
+EQTLs with top and bottom loadings (50 respectively) are used as positive set and 500 eQTLs with most modest loading as background set.
+
+```{r, results='asis'}
+annotateEQTL <- function(eqtl, idx, ensembl) {
+  ensg <- data.frame(t(sapply(eqtl[idx], function(str) {
+    temp <- strsplit(as.character(str), '_')[[1]]
+    x <- temp[1]
+    chr <- temp[2]
+    s <- temp[3]
+    return(c(strsplit(x, '.', fixed = T)[[1]][1], chr, s))
+  })))
+  colnames(ensg) <- c('ensembl_gene_id', 'eqtl_chr', 'eqtl_start')
+  ensg$idx <- idx
+  ensg$ensembl_gene_id <- as.character(ensg$ensembl_gene_id)
+  re <- getBM(
+    attributes = c('ensembl_gene_id', 'hgnc_symbol', 'chromosome_name', 'start_position', 'end_position', 'strand', 'go_id', 'name_1006', 'uniprot_genename', 'uniprot_swissprot_accession', 'transcript_start', 'transcript_end'), 
+    filters = 'ensembl_gene_id',
+    values = ensg[, 1],
+    mart = ensembl)
+  re <- inner_join(re, ensg, by = 'ensembl_gene_id')
+  return(re)
+}
+genGene2GO <- function(g2g, re) {
+  gene <- unique(re$ensembl_gene_id)
+  for(x in gene) {
+    g2g[[x]] <- re[re$ensembl_gene_id == x, 'go_id']
+  }
+  return(g2g)
+}
+ensembl <- useMart(biomart="ENSEMBL_MART_ENSEMBL", host="feb2014.archive.ensembl.org", path="/biomart/martservice", dataset="hsapiens_gene_ensembl")
+positive.idx <- c(order(l.two, decreasing = T)[1:50], order(l.two, decreasing = F)[1:50])
+control.idx <- order(abs(l.two), decreasing = F)[1:500]
+positive.re <- annotateEQTL(eqtl, positive.idx, ensembl)
+control.re <- annotateEQTL(eqtl, control.idx, ensembl)
+gene2go <- list()
+gene2go <- genGene2GO(gene2go, positive.re)
+gene2go <- genGene2GO(gene2go, control.re)
+all.gene <- union(unique(positive.re$ensembl_gene_id), unique(control.re$ensembl_gene_id))
+gene.list <- factor(as.integer(all.gene %in% unique(positive.re$ensembl_gene_id)))
+names(gene.list) <- all.gene
+map <- list(BP = 'Biological process', MF = 'Molecular function', CC = 'Cellular component')
+for(i in c('BP', 'MF', 'CC')) {
+  cat('##', map[[i]])
+  cat('\n')
+  GOdata <- new("topGOdata", ontology = i, allGenes = gene.list, annot = annFUN.gene2GO, gene2GO = gene2go)
+  resultFisher <- runTest(GOdata, algorithm = "classic", statistic = "fisher")
+  allRes <- GenTable(GOdata, classicFisher = resultFisher)
+  pander(allRes, caption = i)
+  cat('\n')
+  cat('\n')
+}
+
+```
+
+It turns out that these top genes are enriched in cation/ion transcportation process. 
+
+# Overview of selected gene sets
+
+```{r}
+df <- data.frame(loading = l.two[c(positive.idx, control.idx)], label = c(rep('positive', length(positive.idx)), rep('control', length(control.idx))))
+ggplot(df) + geom_histogram(aes(x = loading, group = label, fill = label), binwidth = 1) + ggtitle('Histogram of loading')
+```
+
+## Posterior mean comparison across top three tissues
+
+```{r}
+df.load <- mash$posterior$result$PosteriorMean[positive.idx, top.tissue.idx]
+pairs(df.load, main = 'Pairwise comparison of top three tissues in positive set')
+df.load <- mash$posterior$result$PosteriorMean[control.idx, top.tissue.idx]
+pairs(df.load, main = 'Pairwise comparison of top three tissues in control set')
+```
+
+So, it seems that the ones with strong loading on factor 9 are driven by tissue specificity but not strong correlation between these top tissues, which is the same as factor 5.
+
+## Posterior effect size of control eQTLs
+
+```{r, fig.height = 15, fig.width = 8}
+random.idx <- sample(control.idx, 10, replace = F) 
+par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, random.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, ': ', eqtl[i]))
+}
+```
+
+# G-protein coupled receptor
+
+GO term 'GO:0007200' is used (represent phospholipase C-activating G-protein coupled receptor signaling pathway
+)
+
+## Loading
+
+Contrast eQTL in cation/ion transport with the ones unrelated to cation/ion transport on the loading of factor 9. 
+
+```{r}
+re.go <- read.table('../output/strong_eqtl_annotated.txt.gz', header = T)
+re.go.dup <- duplicated(re.go[, c('ensembl_gene_id', 'go_id')])
+re.go <- re.go[!re.go.dup, ]
+cr.gene <- re.go[re.go$go_id == 'GO:0007200', 'idx']
+tspt <- rep('Not GP', length(l.two))
+tspt[unique(cr.gene)] <- 'GP'
+df <- data.frame(loading = l.two, label = tspt)
+ggplot(df, aes(x = abs(loading), color = label)) + stat_ecdf()
+ks.test(abs(df$loading[df$label == 'Not GP']), abs(df$loading[df$label == 'GP']), alternative = 'g')
+wilcox.test(abs(df$loading[df$label == 'Not GP']), abs(df$loading[df$label == 'GP']), alternative = 'l')
+```
+
+The result supports the hypothesis that the eQTLs with strong loading on factor 2 are enriched in the phospholipase C-activating G-protein coupled receptor signaling pathway.
+
+## Effect size
+
+Contrast effect size 
+
+```{r}
+df <- data.frame(mash$posterior$result$PosteriorMean[, ])
+df.se <- data.frame(mash$posterior$result$PosteriorSD[, ])
+col <- colnames(df)
+df.sig <- data.frame(abs(df) > df.se * 1.96)
+df.sig$label <- tspt
+df.sig <- melt(df.sig, id.vars = 'label')
+ggplot(df.sig) +
+  geom_bar(aes(x = variable, group = value, color = value), position = "fill") +
+  facet_grid(label~.) +
+  scale_fill_manual(values = tissue.color, guide = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, color = tissue.color)) +
+  ggtitle('Proportion of non-zero effect gene')
+df.prop <- df.sig %>% group_by(variable, label) %>%
+  summarise(prop = sum(value) / length(value))
+df <- data.frame(GP = df.prop$prop[df.prop$label == 'GP'], NGP = df.prop$prop[df.prop$label == 'Not GP'], tissue = df.prop$variable[df.prop$label == 'GP'])
+ggplot(df) + geom_point(aes(x = NGP, y = GP, color = tissue)) +
+  scale_color_manual(values = tissue.color, guide = FALSE) + geom_abline(slope = 1, intercept = 0) +
+  ggtitle('Proportion of non-zero effect gene (GP vs not GP)')
+```
+
+Overall, genes involved in the phospholipase C-activating G-protein coupled receptor signaling pathway does NOT tend to have non-zero posterior effect (95% credible interval).
+
+# Cellular respiration (CR)
+
+GO term 'GO:0055114' is used (represent oxidation-reduction process)
+
+## Loading
+
+Contrast eQTL in cellular respiration with the ones unrelated to cellular respiration on the loading of factor 2. 
+
+```{r}
+cr.gene <- re.go[re.go$go_id == 'GO:0055114', 'idx']
+cr <- rep('Not CR', length(l.two))
+cr[unique(cr.gene)] <- 'CR'
+df <- data.frame(loading = l.two, label = cr)
+ggplot(df, aes(x = abs(loading), color = label)) + stat_ecdf()
+ks.test(abs(df$loading[df$label == 'Not CR']), abs(df$loading[df$label == 'CR']), alternative = 'g')
+wilcox.test(abs(df$loading[df$label == 'Not CR']), abs(df$loading[df$label == 'CR']), alternative = 'l')
+```
+
+It seems that factor 2 is also associated with cellular repiration. But the enrichment happens in relativelt moderate loading on factor 2.
+
+## Factor 2 vs. factor 5
+
+```{r}
+df.sum <- data.frame(l5 = l.five, l2 = l.two, cr = cr, tspt = tspt)
+ggplot(df.sum) + stat_ecdf(aes(x = abs(l5), color = cr))
+ggplot(df.sum) + stat_ecdf(aes(x = abs(l5), color = tspt))
+ggplot(df.sum) + stat_ecdf(aes(x = abs(l2), color = cr))
+ggplot(df.sum) + stat_ecdf(aes(x = abs(l2), color = tspt))
+ggplot(df.sum) + stat_ecdf(aes(x = abs(l5), color = paste(cr, tspt, sep = ' & ')))
+ggplot(df.sum) + stat_ecdf(aes(x = abs(l2), color = paste(cr, tspt, sep = ' & ')))
+ggplot(df.sum) + geom_point(aes(x = l5, y = l2), alpha = .3) + facet_wrap( ~ paste(cr, tspt, sep = ' & '))
+```
+
+In summary, it seems that factor 5 does NOT capture the phospholipase C-activating G-protein coupled receptor signaling pathway. The top genes in factor 2 has something to do with the phospholipase C-activating G-protein coupled receptor signaling pathway, which is consistent with brain function. 

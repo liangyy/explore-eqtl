@@ -297,7 +297,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Relative position to active enhancer</h1>
-<h4 class="date"><em>15 June, 2018</em></h4>
+<h4 class="date"><em>17 June, 2018</em></h4>
 
 </div>
 
@@ -325,28 +325,37 @@ enhancer_5_10 &lt;- read.table(&#39;../data/enhancer_data_fantom_heart_5_10.bed&
 enhancer_0 &lt;- read.table(&#39;../data/enhancer_data_fantom_heart_0.bed&#39;, sep = &#39;\t&#39;)
 nenhancer &lt;- nrow(enhancer_80_100)
 enhancer_5_10 &lt;- enhancer_5_10[sample(1 : nrow(enhancer_5_10), nenhancer, replace = F), ]
-enhancer_0 &lt;- enhancer_0[sample(1 : nrow(enhancer_0), nenhancer, replace = F), ]
-## get gtex color
-gtex.color &lt;- read.table(url(&#39;https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt&#39;), sep = &#39;\t&#39;, comment.char = &#39;&#39;)
-gtex.color &lt;- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
-tissue.color &lt;- as.character(gtex.color[,2])
-ntissue &lt;- nrow(gtex.color)</code></pre>
+enhancer_0 &lt;- enhancer_0[sample(1 : nrow(enhancer_0), nenhancer, replace = F), ]</code></pre>
 </div>
 <div id="distance-to-enhancer-and-loading" class="section level1">
 <h1><span class="header-section-number">3</span> Distance to enhancer and loading</h1>
-<p>Factor 5 is used (referred as “heart factor”).</p>
 <pre class="r"><code>l.five &lt;- flash$EL[, 5]
+l.one &lt;- flash$EL[, 1]
 l.five &lt;- l.five[eqtl_annotated$idx]
+l.one &lt;- l.one[eqtl_annotated$idx]
 eqtl_annotated$enhancer_80_100_distance &lt;- getDistance(cbind(paste0(&#39;chr&#39;, eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_80_100)
 eqtl_annotated$enhancer_5_10_distance &lt;- getDistance(cbind(paste0(&#39;chr&#39;, eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_5_10)
 eqtl_annotated$enhancer_0_distance &lt;- getDistance(cbind(paste0(&#39;chr&#39;, eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_0)
-eqtl_annotated$loading &lt;- l.five
-eqtl_annotated$tss_distance &lt;- getDistanceToTSS(cbind(eqtl_annotated$eqtl_chr, eqtl_annotated$eqtl_start, eqtl_annotated$chromosome_name, eqtl_annotated$start_position, eqtl_annotated$end_position, eqtl_annotated$strand))
-df &lt;- eqtl_annotated[, c(&#39;tss_distance&#39;, &#39;enhancer_80_100_distance&#39;, &#39;enhancer_5_10_distance&#39;, &#39;enhancer_0_distance&#39;, &#39;loading&#39;)]
-df &lt;- melt(df, id.vars = &#39;loading&#39;)
-ggplot(df) + geom_point(aes(x = loading, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()</code></pre>
+eqtl_annotated$loading_5 &lt;- l.five
+eqtl_annotated$loading_1 &lt;- l.one
+eqtl_annotated$tss_distance &lt;- getDistanceToTSS(cbind(eqtl_annotated$eqtl_chr, eqtl_annotated$eqtl_start, eqtl_annotated$chromosome_name, eqtl_annotated$transcript_start, eqtl_annotated$transcript_end, eqtl_annotated$strand))
+df &lt;- eqtl_annotated[, c(&#39;tss_distance&#39;, &#39;enhancer_80_100_distance&#39;, &#39;enhancer_5_10_distance&#39;, &#39;enhancer_0_distance&#39;, &#39;loading_5&#39;, &#39;loading_1&#39;)]
+df &lt;- melt(df, id.vars = c(&#39;loading_5&#39;, &#39;loading_1&#39;))
+ggplot(df) + geom_point(aes(x = loading_5, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()</code></pre>
 <p><img src="position_to_enhancer_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
-<p>It seems that strong loading on “heart factor” does not correspond to closer distance to fantom expressed enhancer in heart.</p>
+<pre class="r"><code>ggplot(df) + geom_point(aes(x = loading_1, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()</code></pre>
+<p><img src="position_to_enhancer_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+<pre class="r"><code>df.sub &lt;- df[(abs(df$loading_5) &gt; 5 &amp; abs(df$loading_1) &lt; 1) | (abs(df$loading_5) &lt; 1 &amp; abs(df$loading_1) &gt; 50), ]
+df.sub$specific &lt;- TRUE
+df.sub$specific[(abs(df.sub$loading_5) &lt; 1 &amp; abs(df.sub$loading_1) &gt; 50)] &lt;- FALSE
+ggplot(df.sub[df.sub$variable == &#39;tss_distance&#39;, ]) + geom_histogram(aes(x = value, fill = specific), alpha = .5, position = &#39;dodge&#39;) + ggtitle(&#39;Histogram of distance to TSS&#39;)</code></pre>
+<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="position_to_enhancer_files/figure-html/unnamed-chunk-2-3.png" width="672" /></p>
+<p>It seems that strong loading on “heart factor” does not correspond to closer distance to fantom expressed enhancer in heart. Also, eQTLs with strong loading on “heart factor” do not show trend to be further away from TSS comparing to eQTLs with strong loading on factor 1 (universal effect). The possibly explanations are:</p>
+<ol style="list-style-type: decimal">
+<li>EQTLs are not causal ones</li>
+<li>Heart-specific eQTLs are driven by tissue-specific promoter but not tissue-specific promoter-enhancer interaction</li>
+</ol>
 </div>
 
 

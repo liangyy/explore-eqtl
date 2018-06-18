@@ -33,3 +33,8 @@ getDistanceToTSS <- function(x) {
   d[x[, 1] != x[, 3]] <- NA
   return(d)
 }
+
+getFasta <- function(df, obj) {
+  e <- getSeq(obj, df[, 1], start = df[, 2], end = df[, 3], as.character = TRUE)
+  return(e)
+}

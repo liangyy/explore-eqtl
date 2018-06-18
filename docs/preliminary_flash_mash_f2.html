@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>Preliminary analysis of flash and mash result (factor 2)</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Explore eQTL</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/liangyy/explore-eqtl">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Preliminary analysis of flash and mash result (factor 2)</h1>
+<h4 class="date"><em>18 June, 2018</em></h4>
+
+</div>
+
+
+<div id="set-up" class="section level1">
+<h1><span class="header-section-number">1</span> Set up</h1>
+<pre class="r"><code>library(ggplot2)
+library(mashr)
+library(biomaRt)
+library(dplyr)
+library(topGO)
+library(pander)
+library(rmeta)
+library(reshape2)
+panderOptions(&#39;knitr.auto.asis&#39;, FALSE)
+panderOptions(&#39;table.split.table&#39;, Inf)</code></pre>
+</div>
+<div id="read-data" class="section level1">
+<h1><span class="header-section-number">2</span> Read data</h1>
+<pre class="r"><code>flash &lt;- readRDS(&#39;../output/gtex_flash.rds&#39;)
+mash &lt;- readRDS(&#39;../output/gtex_mash.rds&#39;)
+eqtl &lt;- read.table(&#39;../output/strong_eqtl_names.txt&#39;)$V1
+## get gtex color
+gtex.color &lt;- read.table(url(&#39;https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt&#39;), sep = &#39;\t&#39;, comment.char = &#39;&#39;)
+gtex.color &lt;- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
+tissue.color &lt;- as.character(gtex.color[,2])
+ntissue &lt;- nrow(gtex.color)</code></pre>
+</div>
+<div id="factor-9" class="section level1">
+<h1><span class="header-section-number">3</span> Factor 9</h1>
+<p>See details of factor 9 at <a href="run_flashr.html">here</a></p>
+<pre class="r"><code>l &lt;- flash$EL
+dim(l)</code></pre>
+<pre><code>## [1] 16069    23</code></pre>
+<pre class="r"><code>l.two &lt;- l[, 2]
+top.tissue.idx &lt;- order(abs(flash$EF[, 2]), decreasing = T)[1 : 3]
+hist(l.two)</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-243-1.png" width="672" /></p>
+<pre class="r"><code>top.ten.idx &lt;- order(l.two, decreasing = T)[1:10]
+bottom.ten.idx &lt;- order(l.two, decreasing = F)[1:10]</code></pre>
+<div id="ten-eqtl-with-highest-loading" class="section level2">
+<h2><span class="header-section-number">3.1</span> Ten eQTL with highest loading</h2>
+<pre class="r"><code>par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, top.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
+}</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-244-1.png" width="768" /></p>
+</div>
+<div id="ten-eqtl-with-lowest-loading" class="section level2">
+<h2><span class="header-section-number">3.2</span> Ten eQTL with lowest loading</h2>
+<pre class="r"><code>par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, bottom.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
+}</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-245-1.png" width="768" /></p>
+</div>
+</div>
+<div id="gene-ontology-enrichment-analysis" class="section level1">
+<h1><span class="header-section-number">4</span> Gene ontology enrichment analysis</h1>
+<p>EQTLs with top and bottom loadings (50 respectively) are used as positive set and 500 eQTLs with most modest loading as background set.</p>
+<pre class="r"><code>annotateEQTL &lt;- function(eqtl, idx, ensembl) {
+  ensg &lt;- data.frame(t(sapply(eqtl[idx], function(str) {
+    temp &lt;- strsplit(as.character(str), &#39;_&#39;)[[1]]
+    x &lt;- temp[1]
+    chr &lt;- temp[2]
+    s &lt;- temp[3]
+    return(c(strsplit(x, &#39;.&#39;, fixed = T)[[1]][1], chr, s))
+  })))
+  colnames(ensg) &lt;- c(&#39;ensembl_gene_id&#39;, &#39;eqtl_chr&#39;, &#39;eqtl_start&#39;)
+  ensg$idx &lt;- idx
+  ensg$ensembl_gene_id &lt;- as.character(ensg$ensembl_gene_id)
+  re &lt;- getBM(
+    attributes = c(&#39;ensembl_gene_id&#39;, &#39;hgnc_symbol&#39;, &#39;chromosome_name&#39;, &#39;start_position&#39;, &#39;end_position&#39;, &#39;strand&#39;, &#39;go_id&#39;, &#39;name_1006&#39;, &#39;uniprot_genename&#39;, &#39;uniprot_swissprot_accession&#39;, &#39;transcript_start&#39;, &#39;transcript_end&#39;), 
+    filters = &#39;ensembl_gene_id&#39;,
+    values = ensg[, 1],
+    mart = ensembl)
+  re &lt;- inner_join(re, ensg, by = &#39;ensembl_gene_id&#39;)
+  return(re)
+}
+genGene2GO &lt;- function(g2g, re) {
+  gene &lt;- unique(re$ensembl_gene_id)
+  for(x in gene) {
+    g2g[[x]] &lt;- re[re$ensembl_gene_id == x, &#39;go_id&#39;]
+  }
+  return(g2g)
+}
+ensembl &lt;- useMart(biomart=&quot;ENSEMBL_MART_ENSEMBL&quot;, host=&quot;feb2014.archive.ensembl.org&quot;, path=&quot;/biomart/martservice&quot;, dataset=&quot;hsapiens_gene_ensembl&quot;)
+positive.idx &lt;- c(order(l.two, decreasing = T)[1:50], order(l.two, decreasing = F)[1:50])
+control.idx &lt;- order(abs(l.two), decreasing = F)[1:500]
+positive.re &lt;- annotateEQTL(eqtl, positive.idx, ensembl)
+control.re &lt;- annotateEQTL(eqtl, control.idx, ensembl)
+gene2go &lt;- list()
+gene2go &lt;- genGene2GO(gene2go, positive.re)
+gene2go &lt;- genGene2GO(gene2go, control.re)
+all.gene &lt;- union(unique(positive.re$ensembl_gene_id), unique(control.re$ensembl_gene_id))
+gene.list &lt;- factor(as.integer(all.gene %in% unique(positive.re$ensembl_gene_id)))
+names(gene.list) &lt;- all.gene
+map &lt;- list(BP = &#39;Biological process&#39;, MF = &#39;Molecular function&#39;, CC = &#39;Cellular component&#39;)
+for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
+  cat(&#39;##&#39;, map[[i]])
+  cat(&#39;\n&#39;)
+  GOdata &lt;- new(&quot;topGOdata&quot;, ontology = i, allGenes = gene.list, annot = annFUN.gene2GO, gene2GO = gene2go)
+  resultFisher &lt;- runTest(GOdata, algorithm = &quot;classic&quot;, statistic = &quot;fisher&quot;)
+  allRes &lt;- GenTable(GOdata, classicFisher = resultFisher)
+  pander(allRes, caption = i)
+  cat(&#39;\n&#39;)
+  cat(&#39;\n&#39;)
+}</code></pre>
+<div id="biological-process" class="section level2">
+<h2><span class="header-section-number">4.1</span> Biological process</h2>
+<pre><code>## 
+## Building most specific GOs .....</code></pre>
+<pre><code>##  ( 1602 GO terms found. )</code></pre>
+<pre><code>## 
+## Build GO DAG topology ..........</code></pre>
+<pre><code>##  ( 4242 GO terms and 9650 relations. )</code></pre>
+<pre><code>## 
+## Annotating nodes ...............</code></pre>
+<pre><code>##  ( 361 genes annotated to the GO terms. )</code></pre>
+<pre><code>## 
+##           -- Classic Algorithm -- 
+## 
+##       the algorithm is scoring 1777 nontrivial nodes
+##       parameters: 
+##           test statistic: fisher</code></pre>
+<table>
+<caption>BP</caption>
+<colgroup>
+<col width="13%" />
+<col width="33%" />
+<col width="12%" />
+<col width="14%" />
+<col width="11%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">GO.ID</th>
+<th align="center">Term</th>
+<th align="center">Annotated</th>
+<th align="center">Significant</th>
+<th align="center">Expected</th>
+<th align="center">classicFisher</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><a href="GO:0007200" class="uri">GO:0007200</a></td>
+<td align="center">phospholipase C-activating G-protein cou…</td>
+<td align="center">3</td>
+<td align="center">3</td>
+<td align="center">0.52</td>
+<td align="center">0.0051</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0030261" class="uri">GO:0030261</a></td>
+<td align="center">chromosome condensation</td>
+<td align="center">3</td>
+<td align="center">3</td>
+<td align="center">0.52</td>
+<td align="center">0.0051</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0000226" class="uri">GO:0000226</a></td>
+<td align="center">microtubule cytoskeleton organization</td>
+<td align="center">10</td>
+<td align="center">5</td>
+<td align="center">1.75</td>
+<td align="center">0.0172</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0000819" class="uri">GO:0000819</a></td>
+<td align="center">sister chromatid segregation</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.7</td>
+<td align="center">0.0179</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0007126" class="uri">GO:0007126</a></td>
+<td align="center">meiotic nuclear division</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.7</td>
+<td align="center">0.0179</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0007187" class="uri">GO:0007187</a></td>
+<td align="center">G-protein coupled receptor signaling pat…</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.7</td>
+<td align="center">0.0179</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0051321" class="uri">GO:0051321</a></td>
+<td align="center">meiotic cell cycle</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.7</td>
+<td align="center">0.0179</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0098813" class="uri">GO:0098813</a></td>
+<td align="center">nuclear chromosome segregation</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.7</td>
+<td align="center">0.0179</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:1903046" class="uri">GO:1903046</a></td>
+<td align="center">meiotic cell cycle process</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.7</td>
+<td align="center">0.0179</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0051640" class="uri">GO:0051640</a></td>
+<td align="center">organelle localization</td>
+<td align="center">7</td>
+<td align="center">4</td>
+<td align="center">1.22</td>
+<td align="center">0.0196</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="molecular-function" class="section level2">
+<h2><span class="header-section-number">4.2</span> Molecular function</h2>
+<pre><code>## 
+## Building most specific GOs .....</code></pre>
+<pre><code>##  ( 468 GO terms found. )</code></pre>
+<pre><code>## 
+## Build GO DAG topology ..........</code></pre>
+<pre><code>##  ( 758 GO terms and 952 relations. )</code></pre>
+<pre><code>## 
+## Annotating nodes ...............</code></pre>
+<pre><code>##  ( 367 genes annotated to the GO terms. )</code></pre>
+<pre><code>## 
+##           -- Classic Algorithm -- 
+## 
+##       the algorithm is scoring 238 nontrivial nodes
+##       parameters: 
+##           test statistic: fisher</code></pre>
+<table>
+<caption>MF</caption>
+<colgroup>
+<col width="13%" />
+<col width="32%" />
+<col width="12%" />
+<col width="14%" />
+<col width="11%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">GO.ID</th>
+<th align="center">Term</th>
+<th align="center">Annotated</th>
+<th align="center">Significant</th>
+<th align="center">Expected</th>
+<th align="center">classicFisher</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><a href="GO:0001664" class="uri">GO:0001664</a></td>
+<td align="center">G-protein coupled receptor binding</td>
+<td align="center">3</td>
+<td align="center">3</td>
+<td align="center">0.5</td>
+<td align="center">0.0044</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0008083" class="uri">GO:0008083</a></td>
+<td align="center">growth factor activity</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.33</td>
+<td align="center">0.0272</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0016209" class="uri">GO:0016209</a></td>
+<td align="center">antioxidant activity</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.33</td>
+<td align="center">0.0272</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0016836" class="uri">GO:0016836</a></td>
+<td align="center">hydro-lyase activity</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.33</td>
+<td align="center">0.0272</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0004896" class="uri">GO:0004896</a></td>
+<td align="center">cytokine receptor activity</td>
+<td align="center">3</td>
+<td align="center">2</td>
+<td align="center">0.5</td>
+<td align="center">0.0729</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0005200" class="uri">GO:0005200</a></td>
+<td align="center">structural constituent of cytoskeleton</td>
+<td align="center">3</td>
+<td align="center">2</td>
+<td align="center">0.5</td>
+<td align="center">0.0729</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0008375" class="uri">GO:0008375</a></td>
+<td align="center">acetylglucosaminyltransferase activity</td>
+<td align="center">3</td>
+<td align="center">2</td>
+<td align="center">0.5</td>
+<td align="center">0.0729</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0016829" class="uri">GO:0016829</a></td>
+<td align="center">lyase activity</td>
+<td align="center">3</td>
+<td align="center">2</td>
+<td align="center">0.5</td>
+<td align="center">0.0729</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0016835" class="uri">GO:0016835</a></td>
+<td align="center">carbon-oxygen lyase activity</td>
+<td align="center">3</td>
+<td align="center">2</td>
+<td align="center">0.5</td>
+<td align="center">0.0729</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0008234" class="uri">GO:0008234</a></td>
+<td align="center">cysteine-type peptidase activity</td>
+<td align="center">4</td>
+<td align="center">2</td>
+<td align="center">0.66</td>
+<td align="center">0.1304</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="cellular-component" class="section level2">
+<h2><span class="header-section-number">4.3</span> Cellular component</h2>
+<pre><code>## 
+## Building most specific GOs .....</code></pre>
+<pre><code>##  ( 312 GO terms found. )</code></pre>
+<pre><code>## 
+## Build GO DAG topology ..........</code></pre>
+<pre><code>##  ( 544 GO terms and 1091 relations. )</code></pre>
+<pre><code>## 
+## Annotating nodes ...............</code></pre>
+<pre><code>##  ( 381 genes annotated to the GO terms. )</code></pre>
+<pre><code>## 
+##           -- Classic Algorithm -- 
+## 
+##       the algorithm is scoring 216 nontrivial nodes
+##       parameters: 
+##           test statistic: fisher</code></pre>
+<table>
+<caption>CC</caption>
+<colgroup>
+<col width="13%" />
+<col width="32%" />
+<col width="12%" />
+<col width="14%" />
+<col width="11%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">GO.ID</th>
+<th align="center">Term</th>
+<th align="center">Annotated</th>
+<th align="center">Significant</th>
+<th align="center">Expected</th>
+<th align="center">classicFisher</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><a href="GO:0005740" class="uri">GO:0005740</a></td>
+<td align="center">mitochondrial envelope</td>
+<td align="center">15</td>
+<td align="center">6</td>
+<td align="center">2.6</td>
+<td align="center">0.030</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0031966" class="uri">GO:0031966</a></td>
+<td align="center">mitochondrial membrane</td>
+<td align="center">15</td>
+<td align="center">6</td>
+<td align="center">2.6</td>
+<td align="center">0.030</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0005576" class="uri">GO:0005576</a></td>
+<td align="center">extracellular region</td>
+<td align="center">38</td>
+<td align="center">11</td>
+<td align="center">6.58</td>
+<td align="center">0.044</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0044429" class="uri">GO:0044429</a></td>
+<td align="center">mitochondrial part</td>
+<td align="center">22</td>
+<td align="center">7</td>
+<td align="center">3.81</td>
+<td align="center">0.066</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0015030" class="uri">GO:0015030</a></td>
+<td align="center">Cajal body</td>
+<td align="center">3</td>
+<td align="center">2</td>
+<td align="center">0.52</td>
+<td align="center">0.079</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0031967" class="uri">GO:0031967</a></td>
+<td align="center">organelle envelope</td>
+<td align="center">23</td>
+<td align="center">7</td>
+<td align="center">3.98</td>
+<td align="center">0.082</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0031975" class="uri">GO:0031975</a></td>
+<td align="center">envelope</td>
+<td align="center">23</td>
+<td align="center">7</td>
+<td align="center">3.98</td>
+<td align="center">0.082</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0005741" class="uri">GO:0005741</a></td>
+<td align="center">mitochondrial outer membrane</td>
+<td align="center">7</td>
+<td align="center">3</td>
+<td align="center">1.21</td>
+<td align="center">0.103</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0015630" class="uri">GO:0015630</a></td>
+<td align="center">microtubule cytoskeleton</td>
+<td align="center">25</td>
+<td align="center">7</td>
+<td align="center">4.33</td>
+<td align="center">0.120</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0005856" class="uri">GO:0005856</a></td>
+<td align="center">cytoskeleton</td>
+<td align="center">45</td>
+<td align="center">11</td>
+<td align="center">7.8</td>
+<td align="center">0.130</td>
+</tr>
+</tbody>
+</table>
+<p>It turns out that these top genes are enriched in cation/ion transcportation process.</p>
+</div>
+</div>
+<div id="overview-of-selected-gene-sets" class="section level1">
+<h1><span class="header-section-number">5</span> Overview of selected gene sets</h1>
+<pre class="r"><code>df &lt;- data.frame(loading = l.two[c(positive.idx, control.idx)], label = c(rep(&#39;positive&#39;, length(positive.idx)), rep(&#39;control&#39;, length(control.idx))))
+ggplot(df) + geom_histogram(aes(x = loading, group = label, fill = label), binwidth = 1) + ggtitle(&#39;Histogram of loading&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-247-1.png" width="672" /></p>
+<div id="posterior-mean-comparison-across-top-three-tissues" class="section level2">
+<h2><span class="header-section-number">5.1</span> Posterior mean comparison across top three tissues</h2>
+<pre class="r"><code>df.load &lt;- mash$posterior$result$PosteriorMean[positive.idx, top.tissue.idx]
+pairs(df.load, main = &#39;Pairwise comparison of top three tissues in positive set&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-248-1.png" width="672" /></p>
+<pre class="r"><code>df.load &lt;- mash$posterior$result$PosteriorMean[control.idx, top.tissue.idx]
+pairs(df.load, main = &#39;Pairwise comparison of top three tissues in control set&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-248-2.png" width="672" /></p>
+<p>So, it seems that the ones with strong loading on factor 9 are driven by tissue specificity but not strong correlation between these top tissues, which is the same as factor 5.</p>
+</div>
+<div id="posterior-effect-size-of-control-eqtls" class="section level2">
+<h2><span class="header-section-number">5.2</span> Posterior effect size of control eQTLs</h2>
+<pre class="r"><code>random.idx &lt;- sample(control.idx, 10, replace = F) 
+par(mfrow = c(5, 2))
+for(i in 1 : 10) {
+  mash_plot_meta(mash$posterior, random.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
+}</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-249-1.png" width="768" /></p>
+</div>
+</div>
+<div id="g-protein-coupled-receptor" class="section level1">
+<h1><span class="header-section-number">6</span> G-protein coupled receptor</h1>
+<p>GO term ‘<a href="GO:0007200" class="uri">GO:0007200</a>’ is used (represent phospholipase C-activating G-protein coupled receptor signaling pathway )</p>
+<div id="loading" class="section level2">
+<h2><span class="header-section-number">6.1</span> Loading</h2>
+<p>Contrast eQTL in cation/ion transport with the ones unrelated to cation/ion transport on the loading of factor 9.</p>
+<pre class="r"><code>re.go &lt;- read.table(&#39;../output/strong_eqtl_annotated.txt.gz&#39;, header = T)
+re.go.dup &lt;- duplicated(re.go[, c(&#39;ensembl_gene_id&#39;, &#39;go_id&#39;)])
+re.go &lt;- re.go[!re.go.dup, ]
+cr.gene &lt;- re.go[re.go$go_id == &#39;GO:0007200&#39;, &#39;idx&#39;]
+tspt &lt;- rep(&#39;Not GP&#39;, length(l.two))
+tspt[unique(cr.gene)] &lt;- &#39;GP&#39;
+df &lt;- data.frame(loading = l.two, label = tspt)
+ggplot(df, aes(x = abs(loading), color = label)) + stat_ecdf()</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-250-1.png" width="672" /></p>
+<pre class="r"><code>ks.test(abs(df$loading[df$label == &#39;Not GP&#39;]), abs(df$loading[df$label == &#39;GP&#39;]), alternative = &#39;g&#39;)</code></pre>
+<pre><code>## 
+##  Two-sample Kolmogorov-Smirnov test
+## 
+## data:  abs(df$loading[df$label == &quot;Not GP&quot;]) and abs(df$loading[df$label == &quot;GP&quot;])
+## D^+ = 0.22635, p-value = 0.2642
+## alternative hypothesis: the CDF of x lies above that of y</code></pre>
+<pre class="r"><code>wilcox.test(abs(df$loading[df$label == &#39;Not GP&#39;]), abs(df$loading[df$label == &#39;GP&#39;]), alternative = &#39;l&#39;)</code></pre>
+<pre><code>## 
+##  Wilcoxon rank sum test with continuity correction
+## 
+## data:  abs(df$loading[df$label == &quot;Not GP&quot;]) and abs(df$loading[df$label == &quot;GP&quot;])
+## W = 78406, p-value = 0.06026
+## alternative hypothesis: true location shift is less than 0</code></pre>
+<p>The result supports the hypothesis that the eQTLs with strong loading on factor 2 are enriched in the phospholipase C-activating G-protein coupled receptor signaling pathway.</p>
+</div>
+<div id="effect-size" class="section level2">
+<h2><span class="header-section-number">6.2</span> Effect size</h2>
+<p>Contrast effect size</p>
+<pre class="r"><code>df &lt;- data.frame(mash$posterior$result$PosteriorMean[, ])
+df.se &lt;- data.frame(mash$posterior$result$PosteriorSD[, ])
+col &lt;- colnames(df)
+df.sig &lt;- data.frame(abs(df) &gt; df.se * 1.96)
+df.sig$label &lt;- tspt
+df.sig &lt;- melt(df.sig, id.vars = &#39;label&#39;)
+ggplot(df.sig) +
+  geom_bar(aes(x = variable, group = value, color = value), position = &quot;fill&quot;) +
+  facet_grid(label~.) +
+  scale_fill_manual(values = tissue.color, guide = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, color = tissue.color)) +
+  ggtitle(&#39;Proportion of non-zero effect gene&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-251-1.png" width="672" /></p>
+<pre class="r"><code>df.prop &lt;- df.sig %&gt;% group_by(variable, label) %&gt;%
+  summarise(prop = sum(value) / length(value))
+df &lt;- data.frame(GP = df.prop$prop[df.prop$label == &#39;GP&#39;], NGP = df.prop$prop[df.prop$label == &#39;Not GP&#39;], tissue = df.prop$variable[df.prop$label == &#39;GP&#39;])
+ggplot(df) + geom_point(aes(x = NGP, y = GP, color = tissue)) +
+  scale_color_manual(values = tissue.color, guide = FALSE) + geom_abline(slope = 1, intercept = 0) +
+  ggtitle(&#39;Proportion of non-zero effect gene (GP vs not GP)&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-251-2.png" width="672" /></p>
+<p>Overall, genes involved in the phospholipase C-activating G-protein coupled receptor signaling pathway does NOT tend to have non-zero posterior effect (95% credible interval).</p>
+</div>
+</div>
+<div id="cellular-respiration-cr" class="section level1">
+<h1><span class="header-section-number">7</span> Cellular respiration (CR)</h1>
+<p>GO term ‘<a href="GO:0055114" class="uri">GO:0055114</a>’ is used (represent oxidation-reduction process)</p>
+<div id="loading-1" class="section level2">
+<h2><span class="header-section-number">7.1</span> Loading</h2>
+<p>Contrast eQTL in cellular respiration with the ones unrelated to cellular respiration on the loading of factor 2.</p>
+<pre class="r"><code>cr.gene &lt;- re.go[re.go$go_id == &#39;GO:0055114&#39;, &#39;idx&#39;]
+cr &lt;- rep(&#39;Not CR&#39;, length(l.two))
+cr[unique(cr.gene)] &lt;- &#39;CR&#39;
+df &lt;- data.frame(loading = l.two, label = cr)
+ggplot(df, aes(x = abs(loading), color = label)) + stat_ecdf()</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-252-1.png" width="672" /></p>
+<pre class="r"><code>ks.test(abs(df$loading[df$label == &#39;Not CR&#39;]), abs(df$loading[df$label == &#39;CR&#39;]), alternative = &#39;g&#39;)</code></pre>
+<pre><code>## 
+##  Two-sample Kolmogorov-Smirnov test
+## 
+## data:  abs(df$loading[df$label == &quot;Not CR&quot;]) and abs(df$loading[df$label == &quot;CR&quot;])
+## D^+ = 0.079094, p-value = 0.01518
+## alternative hypothesis: the CDF of x lies above that of y</code></pre>
+<pre class="r"><code>wilcox.test(abs(df$loading[df$label == &#39;Not CR&#39;]), abs(df$loading[df$label == &#39;CR&#39;]), alternative = &#39;l&#39;)</code></pre>
+<pre><code>## 
+##  Wilcoxon rank sum test with continuity correction
+## 
+## data:  abs(df$loading[df$label == &quot;Not CR&quot;]) and abs(df$loading[df$label == &quot;CR&quot;])
+## W = 2446200, p-value = 0.002092
+## alternative hypothesis: true location shift is less than 0</code></pre>
+<p>It seems that factor 2 is also associated with cellular repiration. But the enrichment happens in relativelt moderate loading on factor 2.</p>
+</div>
+<div id="factor-2-vs.factor-5" class="section level2">
+<h2><span class="header-section-number">7.2</span> Factor 2 vs. factor 5</h2>
+<pre class="r"><code>df.sum &lt;- data.frame(l5 = l.five, l2 = l.two, cr = cr, tspt = tspt)
+ggplot(df.sum) + stat_ecdf(aes(x = abs(l5), color = cr))</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-253-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l5), color = tspt))</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-253-2.png" width="672" /></p>
+<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l2), color = cr))</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-253-3.png" width="672" /></p>
+<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l2), color = tspt))</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-253-4.png" width="672" /></p>
+<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l5), color = paste(cr, tspt, sep = &#39; &amp; &#39;)))</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-253-5.png" width="672" /></p>
+<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l2), color = paste(cr, tspt, sep = &#39; &amp; &#39;)))</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-253-6.png" width="672" /></p>
+<pre class="r"><code>ggplot(df.sum) + geom_point(aes(x = l5, y = l2), alpha = .3) + facet_wrap( ~ paste(cr, tspt, sep = &#39; &amp; &#39;))</code></pre>
+<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-253-7.png" width="672" /></p>
+<p>In summary, it seems that factor 5 does NOT capture the phospholipase C-activating G-protein coupled receptor signaling pathway. The top genes in factor 2 has something to do with the phospholipase C-activating G-protein coupled receptor signaling pathway, which is consistent with brain function.</p>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

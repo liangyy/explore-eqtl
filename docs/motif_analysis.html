@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>Motif analysis</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Explore eQTL</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/liangyy/explore-eqtl">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Motif analysis</h1>
+<h4 class="date"><em>18 June, 2018</em></h4>
+
+</div>
+
+
+<div id="set-up" class="section level1">
+<h1><span class="header-section-number">1</span> Set up</h1>
+<pre class="r"><code>source(&#39;../scripts/mylib.R&#39;)
+library(ggplot2)
+library(dplyr)
+library(BSgenome.Hsapiens.UCSC.hg19)
+library(seqinr)
+set.seed(2018)</code></pre>
+</div>
+<div id="read-data" class="section level1">
+<h1><span class="header-section-number">2</span> Read data</h1>
+<p>In this section, the motif analysis on the promoters of the genes with strong loading on “heart factor” is performed. The motivation is to see whether “tissue-specific” (strong loading on “heart factor”) eQTL is driven by tissue-specific promoter.</p>
+<pre class="r"><code>flash &lt;- readRDS(&#39;../output/gtex_flash.rds&#39;)
+eqtl_annotated &lt;- read.table(&#39;../output/strong_eqtl_annotated.txt.gz&#39;, header = T)
+eqtl_annotated.dup &lt;- duplicated(eqtl_annotated$ensembl_gene_id)
+eqtl_annotated &lt;- eqtl_annotated[!eqtl_annotated.dup, ]</code></pre>
+</div>
+<div id="extracting-promoter" class="section level1">
+<h1><span class="header-section-number">3</span> Extracting promoter</h1>
+<p>Promoter is defined as the 1 kb region upstream of TSS.</p>
+<pre class="r"><code>window.size &lt;- 1000
+l.five &lt;- flash$EL[, 5]
+l.one &lt;- flash$EL[, 1]
+l.five &lt;- l.five[eqtl_annotated$idx]
+l.one &lt;- l.one[eqtl_annotated$idx]
+eqtl_annotated$loading_5 &lt;- l.five
+eqtl_annotated$loading_1 &lt;- l.one
+df.sub &lt;- eqtl_annotated[(abs(eqtl_annotated$loading_5) &gt; 5 &amp; abs(eqtl_annotated$loading_1) &lt; 1) | (abs(eqtl_annotated$loading_5) &lt; 1 &amp; abs(eqtl_annotated$loading_1) &gt; 50), ]
+df.sub$specific &lt;- TRUE
+df.sub$specific[(abs(df.sub$loading_5) &lt; 1 &amp; abs(df.sub$loading_1) &gt; 50)] &lt;- FALSE
+df.sub$tss &lt;- df.sub$transcript_start
+df.sub$tss[df.sub$strand == -1] &lt;- df.sub$transcript_end[df.sub$strand == -1]
+tss_up1kb &lt;- df.sub$tss - df.sub$strand * window.size
+df.sub$tss_big &lt;- df.sub$tss
+df.sub$tss_big[df.sub$strand == -1] &lt;- tss_up1kb[df.sub$strand == -1]
+df.sub$tss_small &lt;- tss_up1kb
+df.sub$tss_small[df.sub$strand == -1] &lt;- df.sub$tss[df.sub$strand == -1]
+df.sub$seq &lt;- getFasta(data.frame(paste0(&#39;chr&#39;, df.sub$chromosome_name), df.sub$tss_small, df.sub$tss_big), BSgenome.Hsapiens.UCSC.hg19)
+df.sub.pos &lt;- df.sub[df.sub$specific, ]
+write.fasta(as.list(df.sub.pos$seq), df.sub.pos$idx, file.out = &#39;../output/motif_analysis_factor_five.positive.fa&#39;)
+df.sub.neg &lt;- df.sub[!df.sub$specific, ]
+write.fasta(as.list(df.sub.neg$seq), df.sub.neg$idx, file.out = &#39;../output/motif_analysis_factor_five.negative.fa&#39;)</code></pre>
+</div>
+<div id="meme-suite-result-ame" class="section level1">
+<h1><span class="header-section-number">4</span> MEME Suite result (AME)</h1>
+<p>See output file <a href="https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm">here</a></p>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

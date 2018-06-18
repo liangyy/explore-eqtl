@@ -32,28 +32,32 @@ enhancer_0 <- read.table('../data/enhancer_data_fantom_heart_0.bed', sep = '\t')
 nenhancer <- nrow(enhancer_80_100)
 enhancer_5_10 <- enhancer_5_10[sample(1 : nrow(enhancer_5_10), nenhancer, replace = F), ]
 enhancer_0 <- enhancer_0[sample(1 : nrow(enhancer_0), nenhancer, replace = F), ]
-## get gtex color
-gtex.color <- read.table(url('https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt'), sep = '\t', comment.char = '')
-gtex.color <- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
-tissue.color <- as.character(gtex.color[,2])
-ntissue <- nrow(gtex.color)
 ```
 
 # Distance to enhancer and loading
 
-Factor 5 is used (referred as "heart factor").
-
 ```{r}
 l.five <- flash$EL[, 5]
+l.one <- flash$EL[, 1]
 l.five <- l.five[eqtl_annotated$idx]
+l.one <- l.one[eqtl_annotated$idx]
 eqtl_annotated$enhancer_80_100_distance <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_80_100)
 eqtl_annotated$enhancer_5_10_distance <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_5_10)
 eqtl_annotated$enhancer_0_distance <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_0)
-eqtl_annotated$loading <- l.five
-eqtl_annotated$tss_distance <- getDistanceToTSS(cbind(eqtl_annotated$eqtl_chr, eqtl_annotated$eqtl_start, eqtl_annotated$chromosome_name, eqtl_annotated$start_position, eqtl_annotated$end_position, eqtl_annotated$strand))
-df <- eqtl_annotated[, c('tss_distance', 'enhancer_80_100_distance', 'enhancer_5_10_distance', 'enhancer_0_distance', 'loading')]
-df <- melt(df, id.vars = 'loading')
-ggplot(df) + geom_point(aes(x = loading, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()
+eqtl_annotated$loading_5 <- l.five
+eqtl_annotated$loading_1 <- l.one
+eqtl_annotated$tss_distance <- getDistanceToTSS(cbind(eqtl_annotated$eqtl_chr, eqtl_annotated$eqtl_start, eqtl_annotated$chromosome_name, eqtl_annotated$transcript_start, eqtl_annotated$transcript_end, eqtl_annotated$strand))
+df <- eqtl_annotated[, c('tss_distance', 'enhancer_80_100_distance', 'enhancer_5_10_distance', 'enhancer_0_distance', 'loading_5', 'loading_1')]
+df <- melt(df, id.vars = c('loading_5', 'loading_1'))
+ggplot(df) + geom_point(aes(x = loading_5, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()
+ggplot(df) + geom_point(aes(x = loading_1, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()
+df.sub <- df[(abs(df$loading_5) > 5 & abs(df$loading_1) < 1) | (abs(df$loading_5) < 1 & abs(df$loading_1) > 50), ]
+df.sub$specific <- TRUE
+df.sub$specific[(abs(df.sub$loading_5) < 1 & abs(df.sub$loading_1) > 50)] <- FALSE
+ggplot(df.sub[df.sub$variable == 'tss_distance', ]) + geom_histogram(aes(x = value, fill = specific), alpha = .5, position = 'dodge') + ggtitle('Histogram of distance to TSS')
 ```
 
-It seems that strong loading on "heart factor" does not correspond to closer distance to fantom expressed enhancer in heart.
+It seems that strong loading on "heart factor" does not correspond to closer distance to fantom expressed enhancer in heart. Also, eQTLs with strong loading on "heart factor" do not show trend to be further away from TSS comparing to eQTLs with strong loading on factor 1 (universal effect). The possibly explanations are:
+
+1. EQTLs are not causal ones
+2. Heart-specific eQTLs are driven by tissue-specific promoter but not tissue-specific promoter-enhancer interaction

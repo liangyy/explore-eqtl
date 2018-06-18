@@ -297,7 +297,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Preliminary analysis of flash and mash result</h1>
-<h4 class="date"><em>15 June, 2018</em></h4>
+<h4 class="date"><em>17 June, 2018</em></h4>
 
 </div>
 
@@ -335,7 +335,7 @@ dim(l)</code></pre>
 <pre class="r"><code>l.five &lt;- l[, 5]
 top.tissue.idx &lt;- order(abs(flash$EF[, 5]), decreasing = T)[1 : 3]
 hist(l.five)</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-48-1.png" width="672" /></p>
 <pre class="r"><code>top.ten.idx &lt;- order(l.five, decreasing = T)[1:10]
 bottom.ten.idx &lt;- order(l.five, decreasing = F)[1:10]</code></pre>
 <div id="ten-eqtl-with-highest-loading" class="section level2">
@@ -344,7 +344,7 @@ bottom.ten.idx &lt;- order(l.five, decreasing = F)[1:10]</code></pre>
 for(i in 1 : 10) {
   mash_plot_meta(mash$posterior, top.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
 }</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-5-1.png" width="768" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-49-1.png" width="768" /></p>
 </div>
 <div id="ten-eqtl-with-lowest-loading" class="section level2">
 <h2><span class="header-section-number">3.2</span> Ten eQTL with lowest loading</h2>
@@ -352,7 +352,7 @@ for(i in 1 : 10) {
 for(i in 1 : 10) {
   mash_plot_meta(mash$posterior, bottom.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
 }</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-6-1.png" width="768" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-50-1.png" width="768" /></p>
 </div>
 </div>
 <div id="gene-ontology-enrichment-analysis" class="section level1">
@@ -370,7 +370,7 @@ for(i in 1 : 10) {
   ensg$idx &lt;- idx
   ensg$ensembl_gene_id &lt;- as.character(ensg$ensembl_gene_id)
   re &lt;- getBM(
-    attributes = c(&#39;ensembl_gene_id&#39;, &#39;hgnc_symbol&#39;, &#39;chromosome_name&#39;, &#39;start_position&#39;, &#39;end_position&#39;, &#39;strand&#39;, &#39;go_id&#39;, &#39;name_1006&#39;, &#39;uniprot_genename&#39;, &#39;uniprot_swissprot_accession&#39;), 
+    attributes = c(&#39;ensembl_gene_id&#39;, &#39;hgnc_symbol&#39;, &#39;chromosome_name&#39;, &#39;start_position&#39;, &#39;end_position&#39;, &#39;strand&#39;, &#39;go_id&#39;, &#39;name_1006&#39;, &#39;uniprot_genename&#39;, &#39;uniprot_swissprot_accession&#39;, &#39;transcript_start&#39;, &#39;transcript_end&#39;), 
     filters = &#39;ensembl_gene_id&#39;,
     values = ensg[, 1],
     mart = ensembl)
@@ -775,15 +775,15 @@ for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
 <h1><span class="header-section-number">5</span> Overview of selected gene sets</h1>
 <pre class="r"><code>df &lt;- data.frame(loading = l.five[c(positive.idx, control.idx)], label = c(rep(&#39;positive&#39;, length(positive.idx)), rep(&#39;control&#39;, length(control.idx))))
 ggplot(df) + geom_histogram(aes(x = loading, group = label, fill = label), binwidth = 1) + ggtitle(&#39;Histogram of loading&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-52-1.png" width="672" /></p>
 <div id="posterior-mean-comparison-across-top-three-tissues" class="section level2">
 <h2><span class="header-section-number">5.1</span> Posterior mean comparison across top three tissues</h2>
 <pre class="r"><code>df.load &lt;- mash$posterior$result$PosteriorMean[positive.idx, top.tissue.idx]
 pairs(df.load, main = &#39;Pairwise comparison of top three tissues in positive set&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-53-1.png" width="672" /></p>
 <pre class="r"><code>df.load &lt;- mash$posterior$result$PosteriorMean[control.idx, top.tissue.idx]
 pairs(df.load, main = &#39;Pairwise comparison of top three tissues in control set&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-53-2.png" width="672" /></p>
 <p>So, it seems that the ones with strong loading on factor 5 are driven by tissue specificity but not strong correlation between these top tissues.</p>
 </div>
 <div id="posterior-effect-size-of-control-eqtls" class="section level2">
@@ -793,7 +793,7 @@ par(mfrow = c(5, 2))
 for(i in 1 : 10) {
   mash_plot_meta(mash$posterior, random.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
 }</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-10-1.png" width="768" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-54-1.png" width="768" /></p>
 </div>
 </div>
 <div id="cellular-respiration-cr" class="section level1">
@@ -808,7 +808,7 @@ label &lt;- rep(&#39;Not CR&#39;, length(l.five))
 label[unique(cr.gene)] &lt;- &#39;CR&#39;
 df &lt;- data.frame(loading = l.five, label = label)
 ggplot(df, aes(x = abs(loading), color = label)) + stat_ecdf()</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-55-1.png" width="672" /></p>
 <pre class="r"><code>ks.test(abs(df$loading[df$label == &#39;Not CR&#39;]), abs(df$loading[df$label == &#39;CR&#39;]), alternative = &#39;g&#39;)</code></pre>
 <pre><code>## 
 ##  Two-sample Kolmogorov-Smirnov test
@@ -840,14 +840,14 @@ ggplot(df.sig) +
   scale_fill_manual(values = tissue.color, guide = FALSE) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, color = tissue.color)) +
   ggtitle(&#39;Proportion of non-zero effect gene&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-56-1.png" width="672" /></p>
 <pre class="r"><code>df.prop &lt;- df.sig %&gt;% group_by(variable, label) %&gt;%
   summarise(prop = sum(value) / length(value))
 df &lt;- data.frame(CR = df.prop$prop[df.prop$label == &#39;CR&#39;], NCR = df.prop$prop[df.prop$label == &#39;Not CR&#39;], tissue = df.prop$variable[df.prop$label == &#39;CR&#39;])
 ggplot(df) + geom_point(aes(x = NCR, y = CR, color = tissue)) +
   scale_color_manual(values = tissue.color, guide = FALSE) + geom_abline(slope = 1, intercept = 0) +
   ggtitle(&#39;Proportion of non-zero effect gene (CR vs not CR)&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_files/figure-html/unnamed-chunk-56-2.png" width="672" /></p>
 <p>Overall, genes involved in cellular respiration is more likely to have non-zero posterior effect (95% credible interval).</p>
 </div>
 </div>

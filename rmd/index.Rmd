@@ -11,5 +11,13 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 
 # Preliminary analysis
 
-* EQTLs with top loading for "heart factor" [link](preliminary_flash_mash.html)
-* Position to enhancer for eQTLs with strong loading on "heart factor" [link](position_to_enhancer.html)
+* "Heart factor" (factor 5)
+    - EQTLs with top loading for "heart factor" [link](preliminary_flash_mash.html)
+    - Position to enhancer for eQTLs with strong loading on "heart factor" [link](position_to_enhancer.html)
+    - Motif analysis of top eQTL genes for "heart factor" [link](motif_analysis.html)
+
+* "Muscle factor" (factor 9)
+    - EQTLs with top loading for "muscle factor" [link](preliminary_flash_mash_f9.html)
+
+* "Brain factor" (factor 2)
+    - EQTLs with top loading for "muscle factor" [link](preliminary_flash_mash_f2.html)
