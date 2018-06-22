@@ -1,0 +1,277 @@
+# Table of Contents
+- [Overview](#overview)
+- [Global Variable / Environment Setup](#global-variable-environment-setup)
+- [Get Covariate Data](#get-covariate-data)
+- [Get Gene Expression Data](#get-gene-expression-data)
+- [Get SNP Genotype Data](#get-snp-genotype-data)
+- [Code-up Analysis Methods](#code-up-analysis-methods)
+- [Run Analysis](#run-analysis)
+    - [For selected genes and rs ID](#for-selected-genes-and-rs-id)
+    - [For all genes with randomly selected SNPs](#for-all-genes-with-randomly-selected-snps)
+    - [Analyze](#analyze)
+- [Run Multiple Jobs](#run-multiple-jobs)
+- [Complete R Code](#complete-r-code)
+
+## Overview
+__[back to top](#table-of-contents)__
+
+
+
+This document provides a procedure to extract data for single gene cis-eQTL analysis from GTEx data. Single gene data-set is in [MatrixEQTL](http://bios.unc.edu/research/genomic_software/Matrix_eQTL/) format. It is recommended to use this procedure as part of a computational pipeline that extracts single gene data-set and perform analysis for a given list of genes, with given or random SNPs.
+
+
+The procedure is wrapped in `R` due to its popularity among the group, although under the hood Shell commands are used (in fact a pure shell or Python implementation will be more elegant). The complete script can be found at the end of this document.
+
+
+For each gene I document two ways to choose SNPs:
+
+* Choose SNPs by rs ID (for data of interest)
+* Randomly choose *M* cis-SNPs (for null data)
+
+
+## Global Variable / Environment Setup
+__[back to top](#table-of-contents)__
+
+
+
+Here we focus on `Adipose_Subcutaneous` tissue and the work directory is set to `/scratch/midway/gaow`; you need to adjust these accordingly.
+
+```r
+  DataPrefix <- "/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles"
+  WorkDir <- "/scratch/midway/gaow"
+  Tissue <- "Adipose_Subcutaneous"
+  SNPDB <- "/project/mstephens/data/internal_supp/gtex-v6-snp-gene-pairs/snp-gene.sqlite3"
+  M <- 100
+  GEfile <- paste(WorkDir, paste0(Tissue, '_GE.txt'), sep = '/')
+  SNPfile <- paste(WorkDir, paste0(Tissue, '_SNP.txt'), sep = '/')
+  Covfile <- paste(WorkDir, paste0(Tissue, '_Covariates.txt'), sep = '/')
+```
+
+
+## Get Covariate Data
+__[back to top](#table-of-contents)__
+
+
+
+Covariate data remains the same for all genes. Here I extract covariate data for given tissue to `Adipose_Subcutaneous_Covariates.txt` into `WorkDir`.
+
+```r
+  GetCovar <- function() {
+      cmd <- paste("gzip -dc", paste(DataPrefix, "_covariates/", paste0(Tissue, "_Analysis.covariates.txt.gz"), sep = ''), '>', Covfile)
+      ## cat(cmd, "\n")
+      system(cmd)
+  }
+```
+
+
+## Get Gene Expression Data
+__[back to top](#table-of-contents)__
+
+
+
+For given gene name , I extract gene expression data to file `Adipose_Subcutaneous_GE.txt`.
+
+```r
+  GetGE <- function(gene) {
+      GESource <- paste(DataPrefix, "_geneLevelNormalizedExpressionMatrices/", paste0(Tissue, "_Analysis.expr.txt.gz"), sep = '')
+      cmd1 <- paste("zcat ", GESource, " | head -1 >", GEfile)
+      cmd2 <- paste("zcat ", GESource, " | awk '$1 == var {print; exit}' var=\"", gene, "\" >> ", GEfile, sep = '')
+      ## cat(cmd1, "\n")
+      ## cat(cmd2, "\n")
+      system(cmd1)
+      system(cmd2)
+  }
+```
+
+
+## Get SNP Genotype Data
+__[back to top](#table-of-contents)__
+
+
+
+For given vector of SNP ID I extract their genotype to file `Adipose_Subcutaneous_SNP.txt`.
+
+```r
+  GetSNP <- function(snps) {
+      SNPSource <- paste(DataPrefix, "_snpMatrices/", paste0(Tissue, "_Analysis.snps.txt.gz"), sep = '')
+      SNPPattern <- paste('"', '^(', paste(snps, collapse = "|"), ")\\b", '"', sep = '')
+      cmd1 <- paste("zcat ", SNPSource, " | head -1 >", SNPfile)
+      cmd2 <- paste("zcat ", SNPSource, " | grep -E ", SNPPattern, " >> ", SNPfile, sep = '')
+      ## cat(cmd1, "\n")
+      ## cat(cmd2, "\n")
+      system(cmd1)
+      system(cmd2)
+  }
+```
+
+
+## Code-up Analysis Methods
+__[back to top](#table-of-contents)__
+
+
+
+Here I define `AnalyzeTissue()` function should take input files `*Covariate.txt`, `*GE.txt` and `*SNP.txt` and perform trivial analysis by just outputting the file names. You should replace this function with your analysis routine
+
+```r
+  AnalyzeTissue <- function(GEfile, SNPfile, Covfile) {
+      # FIXME: fill-in your procedure
+      cat(GEfile, SNPfile, Covfile, "\n")
+  }
+```
+
+
+
+## Run Analysis
+__[back to top](#table-of-contents)__
+
+
+### For selected genes and rs ID
+__[back to top](#table-of-contents)__
+
+
+The list of gene/snp will have to be prepared, by converting rs ID to genomic coordinates. For example the input gene/snp list is `input.txt`:
+
+```
+  ENSG00000064012.17,rs9288316,rs6719014
+```
+
+
+The function below will convert this list with RS ID to genomic coordinates
+
+```r
+  GetInputData <- function(input_list, output_list, db) {
+    out <- vector()
+    source("/project/mstephens/gtex/scripts/SumstatQuery.R")
+    con  <- file(input_list, open = "r")
+    while (length(oneLine <- readLines(con, n = 1, warn = FALSE)) > 0) {
+      line <- unlist(strsplit(oneLine, ","))
+      snps <- sapply(line[-1], ShowSNP, db = db)
+      out <- append(out, paste(append(line[1], snps), collapse = ','))
+    }
+    write(paste(out, collapse = '\n'), file = output_list)
+  }
+```
+
+### For all genes with randomly selected SNPs
+__[back to top](#table-of-contents)__
+
+
+A list of gene-snp pairs have already been extracted from GTEx Version 6 data ([see description](https://github.com/stephenslab/lab-resource/blob/master/data/gtex-v6-sumstat.md)) and stored in file `/project/mstephens/data/internal_supp/gtex-v6-sumstat-hdf5/MatrixEQTLSumStats.gene-snp-pairs.gz` on Midway. It contains 16069 genes (first column of file), each with names of cis-SNPs within 1Mbase of the transcription start site of the gene (all other columns of the file). For each gene one can randomly choose *M* SNPS as input.
+
+### Analyze
+__[back to top](#table-of-contents)__
+
+
+Code below runs analysis for genes in `GeneList`.
+
+```r
+  set.seed(999)
+  # GeneList <- "/project/mstephens/data/internal_supp/gtex-v6-sumstat-hdf5/MatrixEQTLSumStats.gene-snp-pairs.gz"
+  InputList <- paste0(WorkDir, "/input.txt")
+  GeneList <- paste0(WorkDir, '/GeneList.txt')
+  GetInputData(InputList, GeneList, SNPDB)
+  GetCovar()
+  con  <- file(GeneList, open = "r")
+  while (length(oneLine <- readLines(con, n = 1, warn = FALSE)) > 0) {
+      line <- unlist(strsplit(oneLine, ","))
+      GetGE(line[1])
+      if (M < length(line[-1])) { GetSNP(sample(line[-1], M))
+      } else { GetSNP(line[-1]) }
+      AnalyzeTissue(GEfile, SNPfile, Covfile)
+  }
+  close(con)
+```
+
+
+## Run Multiple Jobs
+__[back to top](#table-of-contents)__
+
+
+
+It is straightforward to parallel the `while` loop in the procedure above to utilize multiple processors. Another way to parallel the procedure particularly for running on the cluster is to split the `GeneList` to multiple files and run this procedure for each subset per computing node in a cluster setting. In this case **variables `GeneList` and `WorkDir` will have to be re-set to avoid name conflicts!**
+
+
+The command below will split `GeneList` to files each containing no more than 1000 lines (`-l 1000`), thus creating 17 `GeneList` files to potentially allow for running 17 parallel jobs:
+
+```
+zcat MatrixEQTLSumStats.gene-snp-pairs.gz | split -l 1000 --additional-suffix .gene-snp-pairs.txt
+```
+
+
+## Complete R Code
+__[back to top](#table-of-contents)__
+
+
+```r
+  # Set global variables
+  DataPrefix <- "/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles"
+  WorkDir <- "/scratch/midway/gaow"
+  Tissue <- "Adipose_Subcutaneous"
+  SNPDB <- "/project/mstephens/data/internal_supp/gtex-v6-snp-gene-pairs/snp-gene.sqlite3"
+  M <- 100
+  GEfile <- paste(WorkDir, paste0(Tissue, '_GE.txt'), sep = '/')
+  SNPfile <- paste(WorkDir, paste0(Tissue, '_SNP.txt'), sep = '/')
+  Covfile <- paste(WorkDir, paste0(Tissue, '_Covariates.txt'), sep = '/')
+  # Extract covariate data
+  GetCovar <- function() {
+      cmd <- paste("gzip -dc", paste(DataPrefix, "_covariates/", paste0(Tissue, "_Analysis.covariates.txt.gz"), sep = ''), '>', Covfile)
+      ## cat(cmd, "\n")
+      system(cmd)
+  }
+  # Extract expression data
+  GetGE <- function(gene) {
+      GESource <- paste(DataPrefix, "_geneLevelNormalizedExpressionMatrices/", paste0(Tissue, "_Analysis.expr.txt.gz"), sep = '')
+      cmd1 <- paste("zcat ", GESource, " | head -1 >", GEfile)
+      cmd2 <- paste("zcat ", GESource, " | awk '$1 == var {print; exit}' var=\"", gene, "\" >> ", GEfile, sep = '')
+      ## cat(cmd1, "\n")
+      ## cat(cmd2, "\n")
+      system(cmd1)
+      system(cmd2)
+  }
+  GetSNP <- function(snps) {
+      SNPSource <- paste(DataPrefix, "_snpMatrices/", paste0(Tissue, "_Analysis.snps.txt.gz"), sep = '')
+      SNPPattern <- paste('"', '^(', paste(snps, collapse = "|"), ")\\b", '"', sep = '')
+      cmd1 <- paste("zcat ", SNPSource, " | head -1 >", SNPfile)
+      cmd2 <- paste("zcat ", SNPSource, " | grep -E ", SNPPattern, " >> ", SNPfile, sep = '')
+      ## cat(cmd1, "\n")
+      ## cat(cmd2, "\n")
+      system(cmd1)
+      system(cmd2)
+  }
+  
+  # Get target data from input list of rs ID
+  GetInputData <- function(input_list, output_list, db) {
+    out <- vector()
+    source("/project/mstephens/gtex/scripts/SumstatQuery.R")
+    con  <- file(input_list, open = "r")
+    while (length(oneLine <- readLines(con, n = 1, warn = FALSE)) > 0) {
+      line <- unlist(strsplit(oneLine, ","))
+      snps <- sapply(line[-1], ShowSNP, db = db)
+      out <- append(out, paste(append(line[1], snps), collapse = ','))
+    }
+    write(paste(out, collapse = '\n'), file = output_list)
+  }
+  
+  # Run Analysis
+  AnalyzeTissue <- function(GEfile, SNPfile, Covfile) {
+      # FIXME: fill-in your procedure
+      cat(GEfile, SNPfile, Covfile, "\n")
+  }
+  
+  # __main__
+  set.seed(999)
+  # GeneList <- "/project/mstephens/data/internal_supp/gtex-v6-sumstat-hdf5/MatrixEQTLSumStats.gene-snp-pairs.gz"
+  InputList <- paste0(WorkDir, "/input.txt")
+  GeneList <- paste0(WorkDir, '/GeneList.txt')
+  GetInputData(InputList, GeneList, SNPDB)
+  GetCovar()
+  con  <- file(GeneList, open = "r")
+  while (length(oneLine <- readLines(con, n = 1, warn = FALSE)) > 0) {
+      line <- unlist(strsplit(oneLine, ","))
+      GetGE(line[1])
+      if (M < length(line[-1])) { GetSNP(sample(line[-1], M))
+      } else { GetSNP(line[-1]) }
+      AnalyzeTissue(GEfile, SNPfile, Covfile)
+  }
+  close(con)
+```
