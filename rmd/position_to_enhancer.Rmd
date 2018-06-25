@@ -2,6 +2,7 @@
 title: "Relative position to active enhancer"
 # author: Yanyu Liang
 date: "`r format(Sys.time(), '%d %B, %Y')`"
+bibliography: myref.bib
 ---
 
 # Set up
@@ -12,6 +13,7 @@ library(ggplot2)
 library(mashr)
 library(dplyr)
 library(pander)
+library(rtracklayer)
 panderOptions('knitr.auto.asis', FALSE)
 panderOptions('table.split.table', Inf)
 set.seed(2018)
@@ -19,19 +21,38 @@ set.seed(2018)
 
 # Read data
 
-This section is to explore the relationship between loading on "heart factor" and distance to heart active enhancer. Fantom enhancer is used. In particular, the heart enhancer is extracted using [SlideBase Human Enhancer Selector](http://slidebase.binf.ku.dk/human_enhancers/selector) where the extraction is restricted to heart with cutoffs 80-100%, 5-10%, 0% (*i.e.* the expression fraction across all tissue).
+This section is to explore the relationship between loading on "heart factor" and distance to heart active enhancer. 
 
 ```{r}
 flash <- readRDS('../output/gtex_flash.rds')
 eqtl_annotated <- read.table('../output/strong_eqtl_annotated.txt.gz', header = T)
 eqtl_annotated.dup <- duplicated(eqtl_annotated$ensembl_gene_id)
 eqtl_annotated <- eqtl_annotated[!eqtl_annotated.dup, ]
+```
+
+# Fantom enhancer 
+
+Fantom enhancer is loaded. In particular, the heart enhancer is extracted using [SlideBase Human Enhancer Selector](http://slidebase.binf.ku.dk/human_enhancers/selector) where the extraction is restricted to heart with cutoffs 80-100%, 5-10%, 0% (*i.e.* the expression fraction across all tissue).
+
+```{r}
 enhancer_80_100 <- read.table('../data/enhancer_data_fantom_heart_80_100.bed', sep = '\t')
 enhancer_5_10 <- read.table('../data/enhancer_data_fantom_heart_5_10.bed', sep = '\t')
 enhancer_0 <- read.table('../data/enhancer_data_fantom_heart_0.bed', sep = '\t')
 nenhancer <- nrow(enhancer_80_100)
 enhancer_5_10 <- enhancer_5_10[sample(1 : nrow(enhancer_5_10), nenhancer, replace = F), ]
 enhancer_0 <- enhancer_0[sample(1 : nrow(enhancer_0), nenhancer, replace = F), ]
+```
+
+# Enhancer candidate obtained by [@may2012large]
+
+This paper uses ChIP-seq to profile binding sites of p300 which is associated with enhancer activity.
+
+```{r}
+p300.adult <- read.table('../data/GSM807734_human_adult_heart_accbp-p300_peak.txt.gz')
+p300.fetal <- read.table('../data/GSM807735_human_fetal_heart_accbp-p300_peak.txt.gz')
+ch = import.chain("~/Downloads/hg18ToHg19.over.chain")
+p300.adult <- as.data.frame(liftOver(makeGRangesFromDataFrame(data.frame(chr = p300.adult[, 1], start = p300.adult[, 2], end = p300.adult[, 3], strand = '.', score = p300.adult[, 5])), ch))
+p300.fetal <- as.data.frame(liftOver(makeGRangesFromDataFrame(data.frame(chr = p300.fetal[, 1], start = p300.fetal[, 2], end = p300.fetal[, 3], strand = '.', score = p300.fetal[, 5])), ch))
 ```
 
 # Distance to enhancer and loading
@@ -44,10 +65,12 @@ l.one <- l.one[eqtl_annotated$idx]
 eqtl_annotated$enhancer_80_100_distance <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_80_100)
 eqtl_annotated$enhancer_5_10_distance <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_5_10)
 eqtl_annotated$enhancer_0_distance <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), enhancer_0)
+eqtl_annotated$p300.adult <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), p300.adult[, 3:5])
+eqtl_annotated$p300.fetal <- getDistance(cbind(paste0('chr', eqtl_annotated$eqtl_chr), eqtl_annotated$eqtl_start), p300.fetal[, 3:5])
 eqtl_annotated$loading_5 <- l.five
 eqtl_annotated$loading_1 <- l.one
 eqtl_annotated$tss_distance <- getDistanceToTSS(cbind(eqtl_annotated$eqtl_chr, eqtl_annotated$eqtl_start, eqtl_annotated$chromosome_name, eqtl_annotated$transcript_start, eqtl_annotated$transcript_end, eqtl_annotated$strand))
-df <- eqtl_annotated[, c('tss_distance', 'enhancer_80_100_distance', 'enhancer_5_10_distance', 'enhancer_0_distance', 'loading_5', 'loading_1')]
+df <- eqtl_annotated[, c('tss_distance', 'enhancer_80_100_distance', 'enhancer_5_10_distance', 'enhancer_0_distance', 'p300.adult', 'p300.fetal', 'loading_5', 'loading_1')]
 df <- melt(df, id.vars = c('loading_5', 'loading_1'))
 ggplot(df) + geom_point(aes(x = loading_5, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()
 ggplot(df) + geom_point(aes(x = loading_1, y = abs(value) + 1), alpha = .1) + facet_wrap(~variable) + scale_y_log10()
@@ -55,9 +78,15 @@ df.sub <- df[(abs(df$loading_5) > 5 & abs(df$loading_1) < 1) | (abs(df$loading_5
 df.sub$specific <- TRUE
 df.sub$specific[(abs(df.sub$loading_5) < 1 & abs(df.sub$loading_1) > 50)] <- FALSE
 ggplot(df.sub[df.sub$variable == 'tss_distance', ]) + geom_histogram(aes(x = value, fill = specific), alpha = .5, position = 'dodge') + ggtitle('Histogram of distance to TSS')
+ggplot(df.sub[df.sub$variable == 'p300.adult', ]) + geom_histogram(aes(x = value, fill = specific), alpha = .5, position = 'dodge') + ggtitle('Histogram of distance to p300 ChIP-seq peak (adult)') + scale_x_log10()
+ggplot(df.sub[df.sub$variable == 'p300.fetal', ]) + geom_histogram(aes(x = value, fill = specific), alpha = .5, position = 'dodge') + ggtitle('Histogram of distance to p300 ChIP-seq peak (fetal)') + scale_x_log10()
 ```
 
 It seems that strong loading on "heart factor" does not correspond to closer distance to fantom expressed enhancer in heart. Also, eQTLs with strong loading on "heart factor" do not show trend to be further away from TSS comparing to eQTLs with strong loading on factor 1 (universal effect). The possibly explanations are:
 
 1. EQTLs are not causal ones
 2. Heart-specific eQTLs are driven by tissue-specific promoter but not tissue-specific promoter-enhancer interaction
+
+
+
+# References

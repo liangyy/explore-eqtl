@@ -1,0 +1,325 @@
+# this module performs some steps for motif analysis
+
+rule get_eqtl_list:
+    input:
+        mash = config['mash'],
+        flash = config['flash'],
+        script = lambda wildcards: 'scripts/{name}.R'.format(name = wildcards.task_name)
+    output:
+        'output/{task_name}/pos_neg.rds'
+    shell:
+        'Rscript scripts/get_eqtl_wrapper.R \
+            --func {input.script} \
+            --mash {input.mash} \
+            --flash {input.flash} \
+            --output {output[0]}'
+
+rule get_fasta:
+    input:
+        eqtl = config['eqtl-meta'],
+        list_rds = 'output/{task_name}/pos_neg.rds'
+    output:
+        'output/{task_name}/positive.fa',
+        'output/{task_name}/negative.fa'
+    params:
+        window_size = config['window_size']
+    shell:
+        'Rscript scripts/get_fasta.R \
+            --eqtl_txt {input.eqtl} \
+            --list_rds {input.list_rds} \
+            --window_size {params.window_size}\
+            --output_prefix output/{wildcards.task_name}/'
+
+# if 'motif-list' not in list(config.keys()):
+
+rule ame:
+    input:
+        'output/{task_name}/positive.fa',
+        'output/{task_name}/negative.fa'
+    params:
+        lambda wildcards: config['motif-database'][wildcards.motifdb_name],
+        'output/{task_name}/ame_out/{motifdb_name}/'
+    output:
+        'output/{task_name}/ame_out/{motifdb_name}/ame.tsv'
+    shell:
+        'ame --verbose 1 --oc {params[1]} --scoring avg --method fisher --hit-lo-fraction 0.25 --evalue-report-threshold 20 --control {input[1]} {input[0]} {params[0]}'
+
+rule motif_list:
+    input:
+        'output/{task_name}/ame_out/{motifdb_name}/ame.tsv'
+    output:
+        'output/{task_name}/motif_list.{motifdb_name}.txt'
+    shell:
+        '''
+        cat {input[0]} | \
+        cut -f3| \
+        grep -v '#'| \
+        grep -v 'motif_ID' \
+        > {output[0]}
+        '''
+
+rule fimo:
+    input:
+        'output/{task_name}/motif_list.{motifdb_name}.txt',
+        'output/{task_name}/positive.fa'
+    output:
+        'output/{task_name}/fimo_out/from_enrichment/{motifdb_name}/fimo.tsv'
+    params:
+        motif_database = lambda wildcards: config['motif-database'][wildcards.motifdb_name],
+        out_dir = 'output/{task_name}/fimo_out/from_enrichment/{motifdb_name}/'
+    shell:
+        'python scripts/fimo_wrapper.py \
+            --motif_list {input[0]} \
+            --fa {input[1]} \
+            --motif_database {params.motif_database} \
+            --out_dir {params.out_dir}'
+# rule all_fimo:
+#     input:
+#         [ 'output/{task_name}/fimo_out/{motifdb_name}/fimo.tsv'.format(task_name = config['task-name'], motifdb_name = i) for i in list(config['motif-database']) ]
+
+if 'motif-list' in list(config.keys()):
+    rule fimo_motif_list:
+        input:
+            lambda wildcards: config['motif-list'][wildcards.list_name]['path'],
+            'output/{task_name}/positive.fa'
+        output:
+            'output/{task_name}/fimo_out/from_predefined_list/{list_name}__{motifdb_name}/fimo.tsv'
+        params:
+            motif_database = lambda wildcards: config['motif-database'][wildcards.motifdb_name],
+            out_dir = 'output/{task_name}/fimo_out/from_predefined_list/{list_name}__{motifdb_name}/'
+        shell:
+            'python scripts/fimo_wrapper.py \
+                --motif_list {input[0]} \
+                --fa {input[1]} \
+                --motif_database {params.motif_database} \
+                --out_dir {params.out_dir}'
+    # rule all_fimo_motif_list:
+    #     input:
+    #         'output/{task_name}/fimo_out/from_predefined_list/{list_name}__{motifdb_name}/fimo.tsv'.format(task_name = config['task-name'], motifdb_name = config['motif-list']['database'], list_name = config['motif-list']['name'])
+
+rule extract_snp_prepare_snp_bed:
+    input:
+        lambda wildcards: config['genotype'][wildcards.geno_name]
+    output:
+        temp('output/{task_name}/motif_snp/{geno_name}/prepare_snp.bed')
+    shell:
+        '''
+        zcat < {input[0]} | cut -f1 | tail -n +2 | awk -F"_" -v OFS="\\t" '{{print "chr"$1,$2-1,$2+length($3)-1,$3,$4,$0}}' > {output[0]}
+        '''
+
+rule extract_snp_prepare_motif_bed:
+    input:
+        'output/{task_name}/fimo_out/{motif_from}/{motif_hit}/fimo.tsv'
+    output:
+        temp('output/{task_name}/motif_snp/prepare_motif.{motif_from}.{motif_hit}.bed')
+    shell:
+        '''
+        cat {input[0]} | grep -v '#' | awk -F"\\t" '{{print $3,$4,$5,$1,$4,$5,$6}}' | tail -n +2 | awk -v OFS="\\t" '{{if($1 != "") {{split($1, a, ":"); split(a[3], b, "-"); print "chr"a[2],b[1]-1+$2-1,b[1]-1+$3,".",$1,$4,$5,$6,$7}}}}' > {output[0]}
+        '''
+
+rule extract_snp_intersect:
+    input:
+        snp = 'output/{task_name}/motif_snp/{geno_name}/prepare_snp.bed',
+        motif = 'output/{task_name}/motif_snp/prepare_motif.{motif_from}.{motif_hit}.bed'
+    output:
+        temp('output/{task_name}/motif_snp/{geno_name}/motif_snp.{motif_from}.{motif_hit}.txt')
+    shell:
+        '''
+        bedtools intersect -a {input.snp} -b {input.motif} -wa -wb > {output[0]}
+        '''
+        # | awk -F"\\t" -v OFS="\\t" '{{print $6,$11}}'
+
+rule obtain_LD_prepare_pair_list:
+    input:
+        motif_snp = 'output/{task_name}/motif_snp/{geno_name}/motif_snp.{motif_from}.{motif_hit}.txt',
+        eqtl_name = config['eqtl-name']
+    output:
+        temp('output/{task_name}/motif_snp/{geno_name}/ld_pair_list.{motif_from}.{motif_hit}.txt')
+    shell:
+        'Rscript scripts/prepare_pair_list.R \
+            --motif_snp {input.motif_snp} \
+            --eqtl_name {input.eqtl_name} \
+            --output {output[0]}'
+
+rule obtain_LD:
+    input:
+        'output/{task_name}/motif_snp/{geno_name}/ld_pair_list.{motif_from}.{motif_hit}.txt',
+        lambda wildcards: config['genotype'][wildcards.geno_name]
+    output:
+        'output/{task_name}/motif_snp/{geno_name}/ld.{motif_from}.{motif_hit}.txt'
+    shell:
+        'python scripts/compute_ld.py \
+            --pair_list {input[0]} \
+            --output {output[0]} \
+            --genotype {input[1]}'
+
+def get_all_ld(config):
+    pattern = 'output/{{task_name}}/motif_snp/{geno_name}/ld.{motif_from}.{motif_hit}.txt'
+    out = []
+    geno_names = list(config['genotype'].keys())
+    motif_froms = ['from_enrichment', 'from_predefined_list']
+    motif_hits = list(config['motif-database'].keys())
+    motif_hits2 = []
+    if 'motif-list' in list(config.keys()):
+        l = list(config['motif-list'].keys())
+        for i in l:
+            db = config['motif-list'][i]['database']
+            motif_hits2.append('{list_name}__{motifdb_name}'.format(list_name = i, motifdb_name = db))
+    for g in geno_names:
+        for m in motif_froms:
+            if m == 'from_enrichment':
+                for h in motif_hits:
+                    out.append(pattern.format(geno_name = g, motif_from = m, motif_hit = h))
+            if m == 'from_predefined_list':
+                for h in motif_hits2:
+                    out.append(pattern.format(geno_name = g, motif_from = m, motif_hit = h))
+    return out
+
+def get_all_fimo(config):
+    pattern = 'output/{{task_name}}/fimo_out/{motif_from}/{motif_hit}/fimo.tsv'
+    out = []
+    geno_names = list(config['genotype'].keys())
+    motif_froms = ['from_enrichment', 'from_predefined_list']
+    motif_hits = list(config['motif-database'].keys())
+    motif_hits2 = []
+    if 'motif-list' in list(config.keys()):
+        l = list(config['motif-list'].keys())
+        for i in l:
+            db = config['motif-list'][i]['database']
+            motif_hits2.append('{list_name}__{motifdb_name}'.format(list_name = i, motifdb_name = db))
+    for g in geno_names:
+        for m in motif_froms:
+            if m == 'from_enrichment':
+                for h in motif_hits:
+                    out.append(pattern.format(geno_name = g, motif_from = m, motif_hit = h))
+            if m == 'from_predefined_list':
+                for h in motif_hits2:
+                    out.append(pattern.format(geno_name = g, motif_from = m, motif_hit = h))
+    return out
+
+rule summarize:
+    input:
+        files = get_all_ld(config),
+        db = [ config['motif-database'][i] for i in list(config['motif-database'].keys()) ],
+        mash = config['mash'],
+        eqtl = config['eqtl-meta'],
+        fimos = get_all_fimo(config)
+    params:
+        files = ','.join(get_all_ld(config)),
+        dbname = ','.join(list(config['motif-database'].keys())),
+        dbpath = ','.join([ config['motif-database'][i] for i in list(config['motif-database'].keys()) ]),
+        fimo_prefix = 'output/{task_name}/fimo_out/'
+    output:
+        'output/{task_name}/report/motif_logo/',
+        'output/{task_name}/report/mash_plot/',
+        'output/{task_name}/report/summary_table.txt'
+    shell:
+        'Rscript scripts/summarize_and_plot.R \
+            --inputs {params.files} \
+            --dbnames {params.dbname} \
+            --dbpaths {params.dbpath} \
+            --mash {input.mash} \
+            --eqtl {input.eqtl} \
+            --out_motif {output[0]} \
+            --out_mash {output[1]} \
+            --out_table {output[2]} \
+            --fimo_prefix {params.fimo_prefix}'
+
+rule generate_report_rmd:
+    input:
+        'output/{task_name}/report/summary_table.txt',
+        'output/{task_name}/report/motif_logo/',
+        'output/{task_name}/report/mash_plot/',
+        config['eqtl-name']
+    output:
+        'output/{task_name}/report/report.Rmd'
+    run:
+        rmd = '''---
+title: "Report for motif SNPs in (pos/neg method {task_name})"
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+    theme: cosmo
+    highlight: textmate
+---
+
+```{{r setup, include=FALSE}}
+knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
+library(kableExtra)
+library(knitr)
+```
+
+# Load data
+
+```{{r}}
+eqtl <- read.table('../../../{eqtl_name}', header = F)
+df <- read.table('../../../{df}', header = T)
+df$eqtl_name <- eqtl$V1[df$idx]
+eqtl_split <- str_match(as.character(df$eqtl_name), '([A-Za-z0-9]+).[0-9]+_([A-Za-z0-9_]+)')
+wrong.ind <- sum(df$ensembl_gene_id != eqtl_split[, 2] | df$leading_eqtl != eqtl_split[, 3])
+sum(wrong.ind)
+df <- df[!wrong.ind,]
+motif_logo_prefix <- '../../../{motif_prefix}'
+mash_plot_prefix <- '../../../{mash_prefix}/mash__idx'
+```
+
+# Motifs obtained from enrichment analysis
+
+```{{r, results='asis'}}
+df.sub <- df[df$motif_from == 'from_enrichment', ]
+df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.sub$motif_id, '.png)')
+df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')
+df.show <- df.sub
+df.show <- df.show[, - which(colnames(df.show) %in% c('idx', 'eqtl_name', 'motif_from'))]
+df.show <- df.show[order(df.show$r2, decreasing = T), ]
+df.show$strand <- as.character(df.show$strand)
+df.show$strand[df.show$strand == '-'] <- 'negative'
+df.show$strand[df.show$strand == '+'] <- 'positive'
+row.names(df.show) <- NULL
+df.show %>% kable(format = "html", col.names = colnames(df.show)) %>%
+  kable_styling() %>%
+  kableExtra::scroll_box(width = "100%", height = "500px")
+```
+
+# Motifs obtained from pre-defined list
+
+```{{r, results='asis'}}
+df.sub <- df[df$motif_from == 'from_predefined_list', ]
+df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.sub$motif_id, '.png)')
+df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')
+df.show <- df.sub
+df.show <- df.show[, - which(colnames(df.show) %in% c('idx', 'eqtl_name', 'motif_from'))]
+df.show <- df.show[order(df.show$r2, decreasing = T), ]
+df.show$strand <- as.character(df.show$strand)
+df.show$strand[df.show$strand == '-'] <- 'negative'
+df.show$strand[df.show$strand == '+'] <- 'positive'
+row.names(df.show) <- NULL
+df.show %>% kable(format = "html", col.names = colnames(df.show)) %>%
+  kable_styling() %>%
+  kableExtra::scroll_box(width = "100%", height = "500px")
+```
+'''.format(task_name = wildcards.task_name, motif_prefix = input[1], mash_prefix = input[2], df = input[0], eqtl_name = input[3])
+        o = open(output[0], 'w')
+        o.write(rmd)
+        o.close()
+
+rule generate_report_html:
+    input:
+        'output/{task_name}/report/summary_table.txt',
+        'output/{task_name}/report/motif_logo/',
+        'output/{task_name}/report/mash_plot/',
+        config['eqtl-name'],
+        'output/{task_name}/report/report.Rmd'
+    output:
+        'output/{task_name}/report/report.html'
+    shell:
+        '''
+        Rscript -e "rmarkdown::render('{input[4]}')"
+        '''
+
+rule all_report:
+    input:
+        'output/{task_name}/report/report.html'.format(task_name = config['task-name'])

@@ -13,6 +13,7 @@ library(ggplot2)
 library(dplyr)
 library(BSgenome.Hsapiens.UCSC.hg19)
 library(seqinr)
+library(mashr)
 set.seed(2018)
 ```
 
@@ -20,28 +21,67 @@ set.seed(2018)
 
 In this section, the motif analysis on the promoters of the genes with strong loading on "heart factor" is performed. The motivation is to see whether "tissue-specific" (strong loading on "heart factor") eQTL is driven by tissue-specific promoter. 
 
-```{r, eval=FALSE}
+```{r}
 flash <- readRDS('../output/gtex_flash.rds')
 eqtl_annotated <- read.table('../output/strong_eqtl_annotated.txt.gz', header = T)
-eqtl_annotated.dup <- duplicated(eqtl_annotated$ensembl_gene_id)
-eqtl_annotated <- eqtl_annotated[!eqtl_annotated.dup, ]
+l.five <- flash$EL[, 5]
+l.one <- flash$EL[, 1]
+mash <- readRDS('../output/gtex_mash.rds')
+eqtl.names <- read.table('../output/strong_eqtl_names.txt')
+## get gtex color
+gtex.color <- read.table(url('https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt'), sep = '\t', comment.char = '')
+gtex.color <- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
+tissue.color <- as.character(gtex.color[,2])
+ntissue <- nrow(gtex.color)
+```
+
+# Obtain positive and negative eQTLs
+
+The idea is to select eQTLs that have clear tissue-specific pattern, *i.e.* it has strong effect in heart/muscle but no strong effect on others.
+
+```{r}
+heart.idx <- c(25, 26, 29)
+cond1 <- abs(l.five) > 8
+mash.mean <- mash$posterior$result$PosteriorMean
+o.mean <- rowMeans(mash.mean[, !(1 : 44 %in% heart.idx)])
+h.mean <- rowMax(mash.mean[, (1 : 44 %in% heart.idx)])
+cond2 <- abs(o.mean) < abs(h.mean) * 0.2
+mash.heart.ind <- cond2 & cond1
+sum(mash.heart.ind)
+```
+
+```{r, fig.height = 8, fig.width = 8}
+e <- seq(1 : length(mash.heart.ind))[mash.heart.ind]
+npart <- ceiling(length(e) / 4)
+for(n in 1 : npart) {
+  par(mfrow = c(2, 2))
+  for(i in ((n - 1) * 4 + 1) : min(length(e), (n * 4)))  {
+    mash_plot_meta(mash$posterior, e[i], color = meta.colors(lines = tissue.color), main = paste0(e[i], ': ', eqtl[i]))
+  }
+}
+```
+
+## Excluding ambiguious pattern
+
+```{r}
+exclude.idx <- c(384, 828, 3218, 4811, 5396, 6932, 7361, 9557, 10602, 11901)
+heart.idx <- e[!e %in% exclude.idx]
 ```
 
 # Extracting promoter
 
 Promoter is defined as the 1 kb region upstream of TSS.
 
-```{r, eval=FALSE}
+```{r}
 window.size <- 1000
-l.five <- flash$EL[, 5]
-l.one <- flash$EL[, 1]
-l.five <- l.five[eqtl_annotated$idx]
-l.one <- l.one[eqtl_annotated$idx]
-eqtl_annotated$loading_5 <- l.five
-eqtl_annotated$loading_1 <- l.one
-df.sub <- eqtl_annotated[(abs(eqtl_annotated$loading_5) > 5 & abs(eqtl_annotated$loading_1) < 1) | (abs(eqtl_annotated$loading_5) < 1 & abs(eqtl_annotated$loading_1) > 50), ]
+eqtl.names$loading_5 <- l.five
+eqtl.names$loading_1 <- l.one
+eqtl.names$idx <- 1 : nrow(eqtl.names)
+control.idx <- eqtl.names$idx[(abs(eqtl.names$loading_5) < 1 & abs(eqtl.names$loading_1) > 50)]
+eqtl.names.sub <- getSubsetByIndex(eqtl.names, c(heart.idx, control.idx))
+df.sub <- eqtl_annotated[eqtl_annotated$idx %in% eqtl.names.sub$idx, ]
 df.sub$specific <- TRUE
-df.sub$specific[(abs(df.sub$loading_5) < 1 & abs(df.sub$loading_1) > 50)] <- FALSE
+df.sub$specific[df.sub$idx %in% control.idx] <- FALSE
 df.sub$tss <- df.sub$transcript_start
 df.sub$tss[df.sub$strand == -1] <- df.sub$transcript_end[df.sub$strand == -1]
 tss_up1kb <- df.sub$tss - df.sub$strand * window.size
@@ -49,55 +89,67 @@ df.sub$tss_big <- df.sub$tss
 df.sub$tss_big[df.sub$strand == -1] <- tss_up1kb[df.sub$strand == -1]
 df.sub$tss_small <- tss_up1kb
 df.sub$tss_small[df.sub$strand == -1] <- df.sub$tss[df.sub$strand == -1]
-df.sub$seq <- getFasta(data.frame(paste0('chr', df.sub$chromosome_name), df.sub$tss_small, df.sub$tss_big), BSgenome.Hsapiens.UCSC.hg19)
+e <- df.sub %>% group_by(ensembl_gene_id) %>% summarise(union = getUnion(tss_small, tss_big), idx = unique(idx))
+e <- e[order(e$idx), ]
+df.sub <- df.sub[order(df.sub$idx), ]
+df.sub <- df.sub[!duplicated(df.sub$ensembl_gene_id), ]
+df.sub[, 'union'] <- e[, 'union']
+df.sub <- expendUnion(df.sub)
+df.sub$seq <- getFasta(data.frame(paste0('chr', df.sub$chromosome_name), df.sub$interval.start, df.sub$interval.end), BSgenome.Hsapiens.UCSC.hg19)
 df.sub.pos <- df.sub[df.sub$specific, ]
-write.fasta(as.list(df.sub.pos$seq), df.sub.pos$idx, file.out = '../output/motif_analysis_factor_five.positive.fa')
+write.fasta(as.list(df.sub.pos$seq), paste0(df.sub.pos$idx, ':', df.sub.pos$chromosome_name, ':', df.sub.pos$interval.start, '-', df.sub.pos$interval.end), file.out = '../output/motif_analysis_factor_five.positive.fa')
 df.sub.neg <- df.sub[!df.sub$specific, ]
-write.fasta(as.list(df.sub.neg$seq), df.sub.neg$idx, file.out = '../output/motif_analysis_factor_five.negative.fa')
+write.fasta(as.list(df.sub.neg$seq), paste0(df.sub.neg$idx, ':', df.sub.neg$chromosome_name, ':', df.sub.neg$interval.start, '-', df.sub.neg$interval.end), file.out = '../output/motif_analysis_factor_five.negative.fa')
 ```
 
-# MEME Suite result (AME)
+<!-- # MEME Suite result (AME) -->
 
-AME performs enrichment analysis by comparing the occurence of motif between positive sequence set and control sequence set. Here, the motifs are from motif database, HOCOMOCOv11 full HUMAN. See output file [here](https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm)
+<!-- AME performs enrichment analysis by comparing the occurence of motif between positive sequence set and control sequence set. Here, the motifs are from motif database, HOCOMOCOv11 full HUMAN. See output file [here](https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm) -->
 
-## TFDP1
+<!-- ## TFDP1 -->
 
-The relation of TFDP1 and heart/muscle tissue is not found but TFDP2 shows high expression level in muscle and heart tissue. Also, TFDP2 is involved in heart development (related to cell cycle).  
+<!-- The relation of TFDP1 and heart/muscle tissue is not found but TFDP2 shows high expression level in muscle and heart tissue. Also, TFDP2 is involved in heart development (related to cell cycle).   -->
 
-## EGR2
+<!-- ## EGR2 -->
 
-No evidence has been found.
+<!-- No evidence has been found. -->
 
-## SP1 
+<!-- ## SP1  -->
 
-[@flesch2001trail] reported that sp1 is involved in the tissue-specific activation of promoter.
+<!-- [@flesch2001trail] reported that sp1 is involved in the tissue-specific activation of promoter. -->
 
-## EGR1
+<!-- ## EGR1 -->
 
-Many studies have shown that EGR1 plays a role in cardic myocyte.
+<!-- Many studies have shown that EGR1 plays a role in cardic myocyte. -->
 
-# MEME Suite result (FIMO)
+<!-- # MEME Suite result (FIMO) -->
 
-FIMO scans and scores the sequences by given motif. Here, sp1 is used (JASPAR ID MA0079.1).
+<!-- FIMO scans and scores the sequences by given motif. Here, sp1 is used (JASPAR ID MA0079.1). -->
 
-```{r}
-pos <- read.table('../output/fimo_f5.positive.tsv', header = T)
-neg <- read.table('../output/fimo_f5.negative.tsv', header = T)
-pos.pmin <- pos %>% group_by(sequence_name) %>%
-  summarise(score = min(p.value))
-neg.pmin <- neg %>% group_by(sequence_name) %>%
-  summarise(score = min(p.value))
-df.sub.order <- df.sub[order(df.sub$idx, decreasing = F), ]
-pos.pmin <- pos.pmin[order(pos.pmin$sequence_name, decreasing = F), ]
-neg.pmin <- neg.pmin[order(neg.pmin$sequence_name, decreasing = F), ]
-df.sub.order$pmin <- NA 
-df.sub.order$pmin[df.sub.order$idx %in% pos.pmin$sequence_name] <- pos.pmin$score
-df.sub.order$pmin[df.sub.order$idx %in% neg.pmin$sequence_name] <- neg.pmin$score
-ggplot(df.sub.order) + geom_boxplot(aes(x = specific, y = pmin, color = specific)) + scale_y_log10() + ggtitle('Q-value vs. loading on factor 5') + geom_jitter(aes(x = specific, y = pmin, color = specific), height = 0)
-wilcox.test(df.sub.order$pmin[df.sub.order$specific], df.sub.order$pmin[!df.sub.order$specific], alternative = 'l')
-ggplot(df.sub.order) + geom_bar(aes(group = is.na(pmin), x = specific, fill = is.na(pmin)), position = "fill") + ggtitle('Fraction of significant hits in positive and control sets') + labs(fill = 'Motif not show', x = 'Control = FALSE, positive = TRUE')
-```
+<!-- ```{r} -->
+<!-- pos <- read.table('../output/fimo_f5.positive.tsv', header = T) -->
+<!-- neg <- read.table('../output/fimo_f5.negative.tsv', header = T) -->
+<!-- pos.pmin <- pos %>% group_by(sequence_name) %>% -->
+<!--   summarise(score = min(p.value)) -->
+<!-- neg.pmin <- neg %>% group_by(sequence_name) %>% -->
+<!--   summarise(score = min(p.value)) -->
+<!-- df.sub.order <- df.sub[order(df.sub$idx, decreasing = F), ] -->
+<!-- pos.pmin <- pos.pmin[order(pos.pmin$sequence_name, decreasing = F), ] -->
+<!-- neg.pmin <- neg.pmin[order(neg.pmin$sequence_name, decreasing = F), ] -->
+<!-- df.sub.order$pmin <- NA  -->
+<!-- df.sub.order$pmin[df.sub.order$idx %in% pos.pmin$sequence_name] <- pos.pmin$score -->
+<!-- df.sub.order$pmin[df.sub.order$idx %in% neg.pmin$sequence_name] <- neg.pmin$score -->
+<!-- ggplot(df.sub.order) + geom_boxplot(aes(x = specific, y = pmin, color = specific)) + scale_y_log10() + ggtitle('Q-value vs. loading on factor 5') + geom_jitter(aes(x = specific, y = pmin, color = specific), height = 0) -->
+<!-- wilcox.test(df.sub.order$pmin[df.sub.order$specific], df.sub.order$pmin[!df.sub.order$specific], alternative = 'l') -->
+<!-- ggplot(df.sub.order) + geom_bar(aes(group = is.na(pmin), x = specific, fill = is.na(pmin)), position = "fill") + ggtitle('Fraction of significant hits in positive and control sets') + labs(fill = 'Motif not show', x = 'Control = FALSE, positive = TRUE') -->
+<!-- ``` -->
 
-The result indicates that the promoter region of factor 5 specific genes have significantly more sp1 binding sites than general eQTLs (strong loading on 1 but weak loading on 5). So, it seems that the tissue-specific eQTLs for factor 5 are indeed controlled by tissue-specific TFs but it is still questionable about how it is regulated (by promoter or chromatin looping mediated promoter-enhancer interaction). The distance analysis gives no pattern (see [here](position_to_enhancer.html)). 
+<!-- The result indicates that the promoter region of factor 5 specific genes have significantly more sp1 binding sites than general eQTLs (strong loading on 1 but weak loading on 5). So, it seems that the tissue-specific eQTLs for factor 5 are indeed controlled by tissue-specific TFs but it is still questionable about how it is regulated (by promoter or chromatin looping mediated promoter-enhancer interaction). The distance analysis gives no pattern (see [here](position_to_enhancer.html)).  -->
+
+<!-- # Save data -->
+
+<!-- ```{r} -->
+<!-- saveRDS(df.sub.order, '../output/motif_analysis_FIMO.rds') -->
+<!-- ``` -->
 
 # References

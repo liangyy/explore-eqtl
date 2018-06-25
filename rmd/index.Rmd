@@ -15,6 +15,7 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
     - EQTLs with top loading for "heart factor" [link](preliminary_flash_mash.html)
     - Position to enhancer for eQTLs with strong loading on "heart factor" [link](position_to_enhancer.html)
     - Motif analysis of top eQTL genes for "heart factor" [link](motif_analysis.html)
+    - Motif analysis with fine mapping [link](motif_analysis_fine_mapping.html)
 
 * "Muscle factor" (factor 9)
     - EQTLs with top loading for "muscle factor" [link](preliminary_flash_mash_f9.html)

@@ -38,3 +38,67 @@ getFasta <- function(df, obj) {
   e <- getSeq(obj, df[, 1], start = df[, 2], end = df[, 3], as.character = TRUE)
   return(e)
 }
+
+getPosition <- function(pos, repos) {
+  if(is.null(nrow(repos))) {
+    return(data.frame(start = pos[1] + repos[1] - 1, end = pos[1] + repos[2])) 
+  } else {
+    n <- nrow(repos)
+    out <- data.frame(start = rep(NA, n), end = rep(NA, n), strand = rep(NA, n))
+    for(i in 1 : n) {
+      out[i, 1] <- pos[1] + repos[i, 1] - 1
+      out[i, 2] <- pos[1] + repos[i, 2]
+    }
+    return(out)
+  }
+}
+
+getLDmat <- function(chr, pos1, pos2, extend.size) {
+  start <- min(pos1, pos2)
+  end <- max(pos1, pos2)
+  query <- paste0(chr, ':', start - extend.size, '-', end + extend.size)
+  cmd <- 'mkdir temp/'
+  system(cmd)
+  cmd <- paste0('tabix -fh ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of4intersection.20100804.genotypes.vcf.gz ', query, ' > temp/genotypes.vcf')
+  system(cmd)
+  cmd <- "vcftools --vcf temp/genotypes.vcf --keep <(wget -qO- ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20100804/20100804.ALL.panel | grep 'CEU\\|TSI\\|FIN\\|GBR\\|IBS'|cut -f1) --recode > temp/genotypes_eur.vcf --out temp/genotypes_eur"
+  system(paste0('echo \"', cmd, '\"'))
+  system(paste0('echo \"', cmd, '\" | bash'))
+  cmd <- '/Users/yanyu_liang/Documents/programs/bin/plink2 --vcf temp/genotypes_eur.recode.vcf --r2 --out temp/ld_out --ld-window-kb 10000000 --ld-window 1000000 --ld-window-r2 0'
+  system(paste0('echo \"', cmd, '\" | bash'))
+  df <- read.table('temp/ld_out.ld', header = T)
+  cmd <- 'rm -r temp/'
+  system(cmd)
+  cmd <- 'rm -f ALL.2of4intersection.20100804.genotypes.vcf.gz.tbi'
+  system(cmd)
+  return(df)
+}
+
+getUnion <- function(s, e) {
+  gr <- GRanges(rep('a', length(s)), IRanges(s, e), strand="*") 
+  gr <- as.data.frame(reduce(gr))
+  out <- paste0(gr$start, '-', gr$end)
+  return(paste(out, collapse = '|'))
+}
+
+expendUnion <- function(df) {
+  df.new <- data.frame()
+  for(i in 1 : nrow(df)) {
+    e <- strsplit(df$union[i], '|', fixed = T)[[1]]
+    e <- unlist(strsplit(e, '-'))
+    n <- length(e) / 2
+    s <- as.numeric(e[seq(1, 2 * n, by = 2)])
+    e <- as.numeric(e[seq(2, 2 * n, by = 2)])
+    temp <- data.frame(c(df[i, ]))
+    temp <- temp[rep(seq_len(nrow(temp)), each=n),]
+    temp$interval.start <- s
+    temp$interval.end <- e
+    df.new <- rbind(df.new, temp)
+  }
+  return(df.new)
+}
+
+getSubsetByIndex <- function(df, idx) {
+  df.sub <- df[df$idx %in% idx, ]
+  return(df.sub)
+}

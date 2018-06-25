@@ -25,7 +25,9 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.0.13/css/fa-svg-with-js.css" rel="stylesheet" />
+<script src="site_libs/font-awesome-5.0.13/js/fontawesome-all.min.js"></script>
+<script src="site_libs/font-awesome-5.0.13/js/fa-v4-shims.min.js"></script>
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -93,6 +95,9 @@ img {
 }
 .tabbed-pane {
   padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
 }
 button.code-folding-btn:focus {
   outline: none;
@@ -297,7 +302,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Motif analysis</h1>
-<h4 class="date"><em>18 June, 2018</em></h4>
+<h4 class="date"><em>22 June, 2018</em></h4>
 
 </div>
 
@@ -309,6 +314,7 @@ library(ggplot2)
 library(dplyr)
 library(BSgenome.Hsapiens.UCSC.hg19)
 library(seqinr)
+library(mashr)
 set.seed(2018)</code></pre>
 </div>
 <div id="read-data" class="section level1">
@@ -316,92 +322,106 @@ set.seed(2018)</code></pre>
 <p>In this section, the motif analysis on the promoters of the genes with strong loading on “heart factor” is performed. The motivation is to see whether “tissue-specific” (strong loading on “heart factor”) eQTL is driven by tissue-specific promoter.</p>
 <pre class="r"><code>flash &lt;- readRDS(&#39;../output/gtex_flash.rds&#39;)
 eqtl_annotated &lt;- read.table(&#39;../output/strong_eqtl_annotated.txt.gz&#39;, header = T)
-eqtl_annotated.dup &lt;- duplicated(eqtl_annotated$ensembl_gene_id)
-eqtl_annotated &lt;- eqtl_annotated[!eqtl_annotated.dup, ]</code></pre>
+# eqtl_annotated.dup &lt;- duplicated(eqtl_annotated$ensembl_gene_id) 
+# eqtl_annotated &lt;- eqtl_annotated[!eqtl_annotated.dup, ]
+# eqtl_annotated$start.merged &lt;- e$s
+# eqtl_annotated$end.merged &lt;- e$e
+mash &lt;- readRDS(&#39;../output/gtex_mash.rds&#39;)
+eqtl.names &lt;- read.table(&#39;../output/strong_eqtl_names.txt&#39;)</code></pre>
 </div>
-<div id="extracting-promoter" class="section level1">
-<h1><span class="header-section-number">3</span> Extracting promoter</h1>
-<p>Promoter is defined as the 1 kb region upstream of TSS.</p>
-<pre class="r"><code>window.size &lt;- 1000
-l.five &lt;- flash$EL[, 5]
-l.one &lt;- flash$EL[, 1]
-l.five &lt;- l.five[eqtl_annotated$idx]
-l.one &lt;- l.one[eqtl_annotated$idx]
-eqtl_annotated$loading_5 &lt;- l.five
-eqtl_annotated$loading_1 &lt;- l.one
-df.sub &lt;- eqtl_annotated[(abs(eqtl_annotated$loading_5) &gt; 5 &amp; abs(eqtl_annotated$loading_1) &lt; 1) | (abs(eqtl_annotated$loading_5) &lt; 1 &amp; abs(eqtl_annotated$loading_1) &gt; 50), ]
-df.sub$specific &lt;- TRUE
-df.sub$specific[(abs(df.sub$loading_5) &lt; 1 &amp; abs(df.sub$loading_1) &gt; 50)] &lt;- FALSE
-df.sub$tss &lt;- df.sub$transcript_start
-df.sub$tss[df.sub$strand == -1] &lt;- df.sub$transcript_end[df.sub$strand == -1]
-tss_up1kb &lt;- df.sub$tss - df.sub$strand * window.size
-df.sub$tss_big &lt;- df.sub$tss
-df.sub$tss_big[df.sub$strand == -1] &lt;- tss_up1kb[df.sub$strand == -1]
-df.sub$tss_small &lt;- tss_up1kb
-df.sub$tss_small[df.sub$strand == -1] &lt;- df.sub$tss[df.sub$strand == -1]
-df.sub$seq &lt;- getFasta(data.frame(paste0(&#39;chr&#39;, df.sub$chromosome_name), df.sub$tss_small, df.sub$tss_big), BSgenome.Hsapiens.UCSC.hg19)
-df.sub.pos &lt;- df.sub[df.sub$specific, ]
-write.fasta(as.list(df.sub.pos$seq), df.sub.pos$idx, file.out = &#39;../output/motif_analysis_factor_five.positive.fa&#39;)
-df.sub.neg &lt;- df.sub[!df.sub$specific, ]
-write.fasta(as.list(df.sub.neg$seq), df.sub.neg$idx, file.out = &#39;../output/motif_analysis_factor_five.negative.fa&#39;)</code></pre>
+<div id="obtain-positive-and-negative-eqtls" class="section level1">
+<h1><span class="header-section-number">3</span> Obtain positive and negative eQTLs</h1>
+<p>The idea is to select eQTLs that have clear tissue-specific pattern, <em>i.e.</em> it has strong effect in heart/muscle but no strong effect on others.</p>
+<pre class="r"><code>heart.idx &lt;- c(25, 26, 29)
+cond1 &lt;- abs(l.five) &gt; 8
+mash.mean &lt;- mash$posterior$result$PosteriorMean
+o.mean &lt;- rowMeans(mash.mean[, !(1 : 44 %in% heart.idx)])
+h.mean &lt;- rowMax(mash.mean[, (1 : 44 %in% heart.idx)])
+cond2 &lt;- abs(o.mean) &lt; abs(h.mean) * 0.2
+mash.heart.ind &lt;- cond2 &amp; cond1
+sum(mash.heart.ind)</code></pre>
+<pre><code>## [1] 42</code></pre>
+<pre class="r"><code>e &lt;- seq(1 : length(mash.heart.ind))[mash.heart.ind]
+npart &lt;- ceiling(length(e) / 4)
+for(n in 1 : npart) {
+  par(mfrow = c(2, 2))
+  for(i in ((n - 1) * 4 + 1) : min(length(e), (n * 4)))  {
+    mash_plot_meta(mash$posterior, e[i], color = meta.colors(lines = tissue.color), main = paste0(e[i], &#39;: &#39;, eqtl[i]))
+  }
+}</code></pre>
+<p><img src="motif_analysis_files/figure-html/unnamed-chunk-482-1.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-2.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-3.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-4.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-5.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-6.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-7.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-8.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-9.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-10.png" width="768" /><img src="motif_analysis_files/figure-html/unnamed-chunk-482-11.png" width="768" /></p>
+<!-- # Extracting promoter -->
+<!-- Promoter is defined as the 1 kb region upstream of TSS. -->
+<!-- ```{r} -->
+<!-- window.size <- 1000 -->
+<!-- l.five <- flash$EL[, 5] -->
+<!-- l.one <- flash$EL[, 1] -->
+<!-- # l.five <- l.five[eqtl_annotated$idx] -->
+<!-- # l.one <- l.one[eqtl_annotated$idx] -->
+<!-- eqtl.names$loading_5 <- l.five -->
+<!-- eqtl.names$loading_1 <- l.one -->
+<!-- eqtl.names$idx <- 1 : nrow(eqtl.names) -->
+<!-- eqtl.names.sub <- eqtl.names[(abs(eqtl.names$loading_5) > 5 & abs(eqtl.names$loading_1) < 1) | (abs(eqtl.names$loading_5) < 1 & abs(eqtl.names$loading_1) > 50), ] -->
+<!-- # df.sub <- eqtl_annotated[(abs(eqtl_annotated$loading_5) > 5 & abs(eqtl_annotated$loading_1) < 1) | (abs(eqtl_annotated$loading_5) < 1 & abs(eqtl_annotated$loading_1) > 50), ] -->
+<!-- df.sub <- eqtl_annotated[eqtl_annotated$idx %in% eqtl.names.sub$idx, ] -->
+<!-- df.sub$specific <- TRUE -->
+<!-- df.sub$specific[df.sub$idx %in% eqtl.names$idx[(abs(eqtl.names$loading_5) < 1 & abs(eqtl.names$loading_1) > 50)]] <- FALSE -->
+<!-- df.sub$tss <- df.sub$transcript_start -->
+<!-- df.sub$tss[df.sub$strand == -1] <- df.sub$transcript_end[df.sub$strand == -1] -->
+<!-- tss_up1kb <- df.sub$tss - df.sub$strand * window.size -->
+<!-- df.sub$tss_big <- df.sub$tss -->
+<!-- df.sub$tss_big[df.sub$strand == -1] <- tss_up1kb[df.sub$strand == -1] -->
+<!-- df.sub$tss_small <- tss_up1kb -->
+<!-- df.sub$tss_small[df.sub$strand == -1] <- df.sub$tss[df.sub$strand == -1] -->
+<!-- e <- df.sub %>% group_by(ensembl_gene_id) %>% summarise(union = getUnion(tss_small, tss_big), idx = unique(idx)) -->
+<!-- e <- e[order(e$idx), ] -->
+<!-- df.sub <- df.sub[order(df.sub$idx), ] -->
+<!-- df.sub <- df.sub[!duplicated(df.sub$ensembl_gene_id), ] -->
+<!-- df.sub[, 'union'] <- e[, 'union'] -->
+<!-- df.sub <- expendUnion(df.sub) -->
+<!-- df.sub$seq <- getFasta(data.frame(paste0('chr', df.sub$chromosome_name), df.sub$interval.start, df.sub$interval.end), BSgenome.Hsapiens.UCSC.hg19) -->
+<!-- df.sub.pos <- df.sub[df.sub$specific, ] -->
+<!-- write.fasta(as.list(df.sub.pos$seq), paste0(df.sub.pos$idx, ':', df.sub.pos$chromosome_name, ':', df.sub.pos$interval.start, '-', df.sub.pos$interval.end), file.out = '../output/motif_analysis_factor_five.positive.fa') -->
+<!-- df.sub.neg <- df.sub[!df.sub$specific, ] -->
+<!-- write.fasta(as.list(df.sub.neg$seq), paste0(df.sub.neg$idx, ':', df.sub.neg$chromosome_name, ':', df.sub.neg$interval.start, '-', df.sub.neg$interval.end), file.out = '../output/motif_analysis_factor_five.negative.fa') -->
+<!-- ``` -->
+<!-- # MEME Suite result (AME) -->
+<!-- AME performs enrichment analysis by comparing the occurence of motif between positive sequence set and control sequence set. Here, the motifs are from motif database, HOCOMOCOv11 full HUMAN. See output file [here](https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm) -->
+<!-- ## TFDP1 -->
+<!-- The relation of TFDP1 and heart/muscle tissue is not found but TFDP2 shows high expression level in muscle and heart tissue. Also, TFDP2 is involved in heart development (related to cell cycle).   -->
+<!-- ## EGR2 -->
+<!-- No evidence has been found. -->
+<!-- ## SP1  -->
+<!-- [@flesch2001trail] reported that sp1 is involved in the tissue-specific activation of promoter. -->
+<!-- ## EGR1 -->
+<!-- Many studies have shown that EGR1 plays a role in cardic myocyte. -->
+<!-- # MEME Suite result (FIMO) -->
+<!-- FIMO scans and scores the sequences by given motif. Here, sp1 is used (JASPAR ID MA0079.1). -->
+<!-- ```{r} -->
+<!-- pos <- read.table('../output/fimo_f5.positive.tsv', header = T) -->
+<!-- neg <- read.table('../output/fimo_f5.negative.tsv', header = T) -->
+<!-- pos.pmin <- pos %>% group_by(sequence_name) %>% -->
+<!--   summarise(score = min(p.value)) -->
+<!-- neg.pmin <- neg %>% group_by(sequence_name) %>% -->
+<!--   summarise(score = min(p.value)) -->
+<!-- df.sub.order <- df.sub[order(df.sub$idx, decreasing = F), ] -->
+<!-- pos.pmin <- pos.pmin[order(pos.pmin$sequence_name, decreasing = F), ] -->
+<!-- neg.pmin <- neg.pmin[order(neg.pmin$sequence_name, decreasing = F), ] -->
+<!-- df.sub.order$pmin <- NA  -->
+<!-- df.sub.order$pmin[df.sub.order$idx %in% pos.pmin$sequence_name] <- pos.pmin$score -->
+<!-- df.sub.order$pmin[df.sub.order$idx %in% neg.pmin$sequence_name] <- neg.pmin$score -->
+<!-- ggplot(df.sub.order) + geom_boxplot(aes(x = specific, y = pmin, color = specific)) + scale_y_log10() + ggtitle('Q-value vs. loading on factor 5') + geom_jitter(aes(x = specific, y = pmin, color = specific), height = 0) -->
+<!-- wilcox.test(df.sub.order$pmin[df.sub.order$specific], df.sub.order$pmin[!df.sub.order$specific], alternative = 'l') -->
+<!-- ggplot(df.sub.order) + geom_bar(aes(group = is.na(pmin), x = specific, fill = is.na(pmin)), position = "fill") + ggtitle('Fraction of significant hits in positive and control sets') + labs(fill = 'Motif not show', x = 'Control = FALSE, positive = TRUE') -->
+<!-- ``` -->
+<!-- The result indicates that the promoter region of factor 5 specific genes have significantly more sp1 binding sites than general eQTLs (strong loading on 1 but weak loading on 5). So, it seems that the tissue-specific eQTLs for factor 5 are indeed controlled by tissue-specific TFs but it is still questionable about how it is regulated (by promoter or chromatin looping mediated promoter-enhancer interaction). The distance analysis gives no pattern (see [here](position_to_enhancer.html)).  -->
+<!-- # Save data -->
+<!-- ```{r} -->
+<!-- saveRDS(df.sub.order, '../output/motif_analysis_FIMO.rds') -->
+<!-- ``` -->
 </div>
-<div id="meme-suite-result-ame" class="section level1">
-<h1><span class="header-section-number">4</span> MEME Suite result (AME)</h1>
-<p>AME performs enrichment analysis by comparing the occurence of motif between positive sequence set and control sequence set. Here, the motifs are from motif database, HOCOMOCOv11 full HUMAN. See output file <a href="https://htmlpreview.github.io/?https://github.com/liangyy/explore-eqtl/blob/master/output/AME_f5.htm">here</a></p>
-<div id="tfdp1" class="section level2">
-<h2><span class="header-section-number">4.1</span> TFDP1</h2>
-<p>The relation of TFDP1 and heart/muscle tissue is not found but TFDP2 shows high expression level in muscle and heart tissue. Also, TFDP2 is involved in heart development (related to cell cycle).</p>
-</div>
-<div id="egr2" class="section level2">
-<h2><span class="header-section-number">4.2</span> EGR2</h2>
-<p>No evidence has been found.</p>
-</div>
-<div id="sp1" class="section level2">
-<h2><span class="header-section-number">4.3</span> SP1</h2>
-<p><span class="citation">(Flesch 2001)</span> reported that sp1 is involved in the tissue-specific activation of promoter.</p>
-</div>
-<div id="egr1" class="section level2">
-<h2><span class="header-section-number">4.4</span> EGR1</h2>
-<p>Many studies have shown that EGR1 plays a role in cardic myocyte.</p>
-</div>
-</div>
-<div id="meme-suite-result-fimo" class="section level1">
-<h1><span class="header-section-number">5</span> MEME Suite result (FIMO)</h1>
-<p>FIMO scans and scores the sequences by given motif. Here, sp1 is used (JASPAR ID MA0079.1).</p>
-<pre class="r"><code>pos &lt;- read.table(&#39;../output/fimo_f5.positive.tsv&#39;, header = T)
-neg &lt;- read.table(&#39;../output/fimo_f5.negative.tsv&#39;, header = T)
-pos.pmin &lt;- pos %&gt;% group_by(sequence_name) %&gt;%
-  summarise(score = min(p.value))
-neg.pmin &lt;- neg %&gt;% group_by(sequence_name) %&gt;%
-  summarise(score = min(p.value))
-df.sub.order &lt;- df.sub[order(df.sub$idx, decreasing = F), ]
-pos.pmin &lt;- pos.pmin[order(pos.pmin$sequence_name, decreasing = F), ]
-neg.pmin &lt;- neg.pmin[order(neg.pmin$sequence_name, decreasing = F), ]
-df.sub.order$pmin &lt;- NA 
-df.sub.order$pmin[df.sub.order$idx %in% pos.pmin$sequence_name] &lt;- pos.pmin$score
-df.sub.order$pmin[df.sub.order$idx %in% neg.pmin$sequence_name] &lt;- neg.pmin$score
-ggplot(df.sub.order) + geom_boxplot(aes(x = specific, y = pmin, color = specific)) + scale_y_log10() + ggtitle(&#39;Q-value vs. loading on factor 5&#39;) + geom_jitter(aes(x = specific, y = pmin, color = specific), height = 0)</code></pre>
-<pre><code>## Warning: Removed 63 rows containing non-finite values (stat_boxplot).</code></pre>
-<pre><code>## Warning: Removed 63 rows containing missing values (geom_point).</code></pre>
-<p><img src="motif_analysis_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<pre class="r"><code>wilcox.test(df.sub.order$pmin[df.sub.order$specific], df.sub.order$pmin[!df.sub.order$specific], alternative = &#39;l&#39;)</code></pre>
-<pre><code>## 
-##  Wilcoxon rank sum test with continuity correction
-## 
-## data:  df.sub.order$pmin[df.sub.order$specific] and df.sub.order$pmin[!df.sub.order$specific]
-## W = 1268, p-value = 0.02392
-## alternative hypothesis: true location shift is less than 0</code></pre>
-<pre class="r"><code>ggplot(df.sub.order) + geom_bar(aes(group = is.na(pmin), x = specific, fill = is.na(pmin)), position = &quot;fill&quot;) + ggtitle(&#39;Fraction of significant hits in positive and control sets&#39;) + labs(fill = &#39;Motif not show&#39;, x = &#39;Control = FALSE, positive = TRUE&#39;)</code></pre>
-<p><img src="motif_analysis_files/figure-html/unnamed-chunk-3-2.png" width="672" /></p>
-<p>The result indicates that the promoter region of factor 5 specific genes have significantly more sp1 binding sites than general eQTLs (strong loading on 1 but weak loading on 5). So, it seems that the tissue-specific eQTLs for factor 5 are indeed controlled by tissue-specific TFs but it is still questionable about how it is regulated (by promoter or chromatin looping mediated promoter-enhancer interaction). The distance analysis gives no pattern (see <a href="position_to_enhancer.html">here</a>).</p>
-</div>
-<div id="references" class="section level1 unnumbered">
-<h1>References</h1>
-<div id="refs" class="references">
-<div id="ref-flesch2001trail">
-<p>Flesch, Markus. 2001. “On the Trail of Cardiac Specific Transcription Factors.” Elsevier Science.</p>
-</div>
-</div>
+<div id="references" class="section level1">
+<h1><span class="header-section-number">4</span> References</h1>
 </div>
 
 
