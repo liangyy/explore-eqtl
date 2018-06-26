@@ -370,19 +370,19 @@ mash_plot_prefix <- '../../../{mash_prefix}/mash__idx'
 
 ```{{r, results='asis'}}
 for(i in 1 : nrow(df.sub)) {{
-    motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname[i], '__', df.sub$motif_id[i], '.png)')
-    mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx[i], '.png)')
-    cat('#', as.character(df.sub$gene_name[i]), as.character(df$motif_id[i]), '\n', '\n')
+    motif_logo <- paste0(motif_logo_prefix, df.sub$dbname[i], '__', df.sub$motif_id[i], '.png')
+    mash_plot <- paste0(mash_plot_prefix, df.sub$idx[i], '.png')
+    cat('#', as.character(df.sub$gene_name[i]), as.character(df$motif_id[i]), '\\n', '\\n')
     df.show <- df.sub[, - which(colnames(df.sub) %in% c('idx', 'motif_from', 'motif_matched_sequence', 'motif_qval', 'dbname', 'rownum'))]
     pander(df.show[i, ])
-    img1 <-  rasterGrob(as.raster(readPNG(motif_logo)), interpolate = FALSE)
-    img2 <-  rasterGrob(as.raster(readPNG(mash_plot)), interpolate = FALSE)
+    img1 <- rasterGrob(as.raster(readPNG(motif_logo)), interpolate = FALSE)
+    img2 <- rasterGrob(as.raster(readPNG(mash_plot)), interpolate = FALSE)
     grid.arrange(img1, img2, ncol = 2)
-    # cat(motif_logo, mash_plot, '\n')
+    # cat(motif_logo, mash_plot, '\\n')
     # df.sub[i, ] %>% kable(format = "html", col.names = colnames(df.sub)) %>%
     #   kable_styling() %>%
     #   kableExtra::scroll_box(width = "100%", height = "200px")
-    cat('\n', '\n')
+    cat('\\n', '\\n')
 }}
 ```
 '''.format(task_name = wildcards.task_name, motif_prefix = input[1], mash_prefix = input[2], df = input[0])
