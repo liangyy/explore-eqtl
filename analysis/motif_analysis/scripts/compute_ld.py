@@ -39,7 +39,7 @@ except pd.errors.EmptyDataError:
 snp_list = df['strong_eqtl_id'].tolist() + df['motif_snp_id'].tolist()
 
 conds = []
-for snp in snp_list:
+for snp in set(snp_list):
     conds.append(pattern.format(snp_id = snp))
 if_statement = ' || '.join(conds)
 awk_cmd = '''awk '{{if({if_statement}) print $0}}' '''.format(if_statement = if_statement)

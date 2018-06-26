@@ -5,8 +5,8 @@ eqtl-meta: '../../output/strong_eqtl_annotated.txt.gz'
 eqtl-name: '../../output/strong_eqtl_names.txt'
 # script_defining_pos_neg: 'scripts/first_try.R'
 motif-database:
-  human: '/Users/yanyu_liang/Documents/learnATcmu/repo/explore-eqtl/data/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme'
-  jaspar: '/Users/yanyu_liang/Documents/learnATcmu/repo/explore-eqtl/data/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme'
+  human: '../../data/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme'
+  jaspar: '../../data/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme'
 window_size: 1000
 motif-list:  # http://www.pnas.org/content/108/14/5632
   pnas-human:
