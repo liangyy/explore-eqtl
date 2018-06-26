@@ -29,5 +29,9 @@ def get_motif_cmd(txt):
     return cmd
 
 motif_cmd = get_motif_cmd(args.motif_list)
-cmd = 'fimo --oc {out_dir} --verbosity 1 {motif_cmd} {motif_database} {fa}'.format(out_dir = args.out_dir, motif_cmd = motif_cmd, motif_database = args.motif_database, fa = args.fa)
+if cmd.strip() != '':
+    cmd = 'fimo --oc {out_dir} --verbosity 1 {motif_cmd} {motif_database} {fa}'.format(out_dir = args.out_dir, motif_cmd = motif_cmd, motif_database = args.motif_database, fa = args.fa)
+else:
+    cmd = 'touch {out_dir}/fimo.tsv'.format(out_dir = args.out_dir)
+    sys.exit()
 os.system(cmd)
