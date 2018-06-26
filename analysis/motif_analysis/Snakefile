@@ -347,6 +347,7 @@ library(kableExtra)
 library(knitr)
 library(pander)
 panderOptions('knitr.auto.asis', FALSE)
+panderOptions('table.split.table', Inf)
 ```
 
 # Load data
@@ -368,8 +369,9 @@ mash_plot_prefix <- '../../../{mash_prefix}/mash__idx'
 for(i in 1 : nrow(df.sub)) {{
     motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname[i], '__', df.sub$motif_id[i], '.png)')
     mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx[i], '.png)')
-    cat('#', df.sub$gene_name[i], df$motif_id[i], '\n', '\n')
-    pander(df.sub[i, ])
+    cat('#', as.character(df.sub$gene_name[i]), as.character(df$motif_id[i]), '\n', '\n')
+    df.show <- df.sub[, - which(colnames(df.sub) %in% c('idx', 'motif_from', 'motif_matched_sequence', 'motif_qval', 'dbname', 'rownum'))]
+    pander(df.show[i, ])
     cat(motif_logo, mash_plot, '\n')
     # df.sub[i, ] %>% kable(format = "html", col.names = colnames(df.sub)) %>%
     #   kable_styling() %>%
