@@ -275,7 +275,7 @@ df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.s
 df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')
 df.show <- df.sub
 df.show <- df.show[, - which(colnames(df.show) %in% c('idx', 'eqtl_name', 'motif_from'))]
-df.show <- df.show[order(df.show$r2, decreasing = T), ]
+df.show <- df.show[order(df.show$r ^ 2, decreasing = T), ]
 df.show$strand <- as.character(df.show$strand)
 df.show$strand[df.show$strand == '-'] <- 'negative'
 df.show$strand[df.show$strand == '+'] <- 'positive'
@@ -293,7 +293,7 @@ df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.s
 df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')
 df.show <- df.sub
 df.show <- df.show[, - which(colnames(df.show) %in% c('idx', 'eqtl_name', 'motif_from'))]
-df.show <- df.show[order(df.show$r2, decreasing = T), ]
+df.show <- df.show[order(df.show$r2 ^ 2, decreasing = T), ]
 df.show$strand <- as.character(df.show$strand)
 df.show$strand[df.show$strand == '-'] <- 'negative'
 df.show$strand[df.show$strand == '+'] <- 'positive'
@@ -359,7 +359,7 @@ panderOptions('table.split.table', Inf)
 df <- read.table('../../../{df}', header = T)
 df$rownum <- 1 : nrow(df)
 
-df.sub <- df[df$motif_qval < 0.05 & df$r2 > 0.5, ]
+df.sub <- df[df$motif_qval < 0.05 & abs(df$r) > 0.5, ]
 df.sub$strand <- as.character(df.sub$strand)
 df.sub$strand[df.sub$strand == '-'] <- 'negative'
 df.sub$strand[df.sub$strand == '+'] <- 'positive'

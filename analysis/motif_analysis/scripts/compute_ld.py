@@ -26,7 +26,7 @@ def ld(snp, geno):
     geno1 = geno[geno.ix[:, 0] == snp1].ix[:, 1:].values[0]
     geno2 = geno[geno.ix[:, 0] == snp2].ix[:, 1:].values[0]
     r = np.corrcoef(geno1, geno2)[0, 1]
-    return np.power(r, 2)
+    return r
 
 pattern = '$1=="{snp_id}"'
 try:
@@ -49,5 +49,5 @@ subset_str = subprocess.check_output(cmd, shell = True)
 handle = io.StringIO(subset_str.decode())
 df_geno = pd.read_csv(handle, sep = '\t', header = None)
 
-df['r2'] = df.apply(ld, axis = 1, geno = df_geno)
+df['r'] = df.apply(ld, axis = 1, geno = df_geno)
 df.to_csv(args.output, sep = '\t', index = False)

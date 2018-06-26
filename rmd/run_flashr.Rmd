@@ -19,7 +19,7 @@ library(ggplot2)
 con <- gzcon(url('https://github.com/stephenslab/gtexresults/raw/master/data/MatrixEQTLSumStats.Portable.Z.rds'))
 data <- readRDS(con)
 close(con)
-strong.z <- data$test.z
+strong.z <- data$strong.z
 dim(strong.z)
 gene.names <- row.names(strong.z)
 ## get gtex color

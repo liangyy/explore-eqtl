@@ -71,8 +71,8 @@ for(f in opt$inputs) {
   motif_snp.df$motif_snp.pos[motif_snp.df$strand == '-'] <- motif_snp.df$motif_end[motif_snp.df$strand == '-'] - motif_snp.df$motif_snp_end[motif_snp.df$strand == '-'] + 1
   motif_snp.df$hgnc_symbol <- eqtl[match(motif_snp.df$idx, eqtl$idx), 'hgnc_symbol']
   motif_snp.df$ensembl_gene_id <- eqtl[match(motif_snp.df$idx, eqtl$idx), 'ensembl_gene_id']
-  df <- motif_snp.df[, c('hgnc_symbol', 'ensembl_gene_id', 'strong_eqtl_id', 'motif_snp_id', 'r2', 'motif_id', 'motif_alt_id', 'q.value', 'matched_sequence', 'motif_snp.pos', 'motif.length', 'idx', 'strand')]
-  colnames(df) <- c('gene_name', 'ensembl_gene_id', 'leading_eqtl', 'motif_snp', 'r2', 'motif_id', 'motif_name', 'motif_qval', 'motif_matched_sequence', 'motif_snp.pos', 'motif.length', 'idx', 'strand')
+  df <- motif_snp.df[, c('hgnc_symbol', 'ensembl_gene_id', 'strong_eqtl_id', 'motif_snp_id', 'r', 'motif_id', 'motif_alt_id', 'q.value', 'matched_sequence', 'motif_snp.pos', 'motif.length', 'idx', 'strand')]
+  colnames(df) <- c('gene_name', 'ensembl_gene_id', 'leading_eqtl', 'motif_snp', 'r', 'motif_id', 'motif_name', 'motif_qval', 'motif_matched_sequence', 'motif_snp.pos', 'motif.length', 'idx', 'strand')
   df$tissue <- tissue
   df$motif_from <- from_info
   df$dbname <- db
