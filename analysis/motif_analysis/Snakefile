@@ -346,6 +346,9 @@ library(stringr)
 library(kableExtra)
 library(knitr)
 library(pander)
+library(png)
+library(grid)
+library(gridExtra)
 panderOptions('knitr.auto.asis', FALSE)
 panderOptions('table.split.table', Inf)
 ```
@@ -372,7 +375,10 @@ for(i in 1 : nrow(df.sub)) {{
     cat('#', as.character(df.sub$gene_name[i]), as.character(df$motif_id[i]), '\n', '\n')
     df.show <- df.sub[, - which(colnames(df.sub) %in% c('idx', 'motif_from', 'motif_matched_sequence', 'motif_qval', 'dbname', 'rownum'))]
     pander(df.show[i, ])
-    cat(motif_logo, mash_plot, '\n')
+    img1 <-  rasterGrob(as.raster(readPNG(motif_logo)), interpolate = FALSE)
+    img2 <-  rasterGrob(as.raster(readPNG(mash_plot)), interpolate = FALSE)
+    grid.arrange(img1, img2, ncol = 2)
+    # cat(motif_logo, mash_plot, '\n')
     # df.sub[i, ] %>% kable(format = "html", col.names = colnames(df.sub)) %>%
     #   kable_styling() %>%
     #   kableExtra::scroll_box(width = "100%", height = "200px")
