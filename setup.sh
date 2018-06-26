@@ -1,5 +1,5 @@
 # meme setup
-export PATH=$PATH:/project2/xinhe/yanyul/softwares/bin/meme/bin:/project2/xinhe/yanyul/softwares/bin/meme/libexec/meme-5.0.1
+export PATH=/project2/xinhe/yanyul/softwares/bin/meme/bin:/project2/xinhe/yanyul/softwares/bin/meme/libexec/meme-5.0.1:$PATH
 # END
 
 # bedtools setup

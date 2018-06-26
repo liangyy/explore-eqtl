@@ -16,7 +16,7 @@ parser.add_argument('--out_dir', help='''
 ''')
 args = parser.parse_args()
 
-import os
+import os, sys
 
 def get_motif_cmd(txt):
     cmd = ''
@@ -29,9 +29,10 @@ def get_motif_cmd(txt):
     return cmd
 
 motif_cmd = get_motif_cmd(args.motif_list)
-if cmd.strip() != '':
+if motif_cmd.strip() != '':
     cmd = 'fimo --oc {out_dir} --verbosity 1 {motif_cmd} {motif_database} {fa}'.format(out_dir = args.out_dir, motif_cmd = motif_cmd, motif_database = args.motif_database, fa = args.fa)
 else:
     cmd = 'touch {out_dir}/fimo.tsv'.format(out_dir = args.out_dir)
+    os.system(cmd)
     sys.exit()
 os.system(cmd)
