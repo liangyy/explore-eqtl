@@ -372,7 +372,7 @@ mash_plot_prefix <- '../../../{mash_prefix}/mash__idx'
 for(i in 1 : nrow(df.sub)) {{
     motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname[i], '__', df.sub$motif_id[i], '.png)')
     mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx[i], '.png)')
-    cat('#', as.character(df.sub$gene_name[i]), as.character(df$motif_id[i]), '\n', '\n')
+    cat('#', as.character(df.sub$gene_name[i]), as.character(df.sub$motif_id[i]), '\n', '\n')
     df.show <- df.sub[, - which(colnames(df.sub) %in% c('idx', 'motif_from', 'motif_matched_sequence', 'motif_qval', 'dbname', 'rownum'))]
     pander(df.show[i, ])
     img1 <-  rasterGrob(as.raster(readPNG(motif_logo)), interpolate = FALSE)
