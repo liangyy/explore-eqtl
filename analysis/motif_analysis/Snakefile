@@ -321,6 +321,80 @@ rule generate_report_html:
         Rscript -e "rmarkdown::render('{input[4]}')"
         '''
 
+rule spotlight_report_rmd:
+    input:
+        'output/{task_name}/report/summary_table.txt',
+        'output/{task_name}/report/motif_logo/',
+        'output/{task_name}/report/mash_plot/',
+    output:
+        temp('output/{task_name}/report/spotlight.Rmd')
+    run:
+        rmd = '''---
+title: "Spotlight report for motif SNPs in (pos/neg method {task_name})"
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+    theme: cosmo
+    highlight: textmate
+---
+
+```{{r setup, include=FALSE}}
+knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
+library(kableExtra)
+library(knitr)
+```
+
+# Load data
+
+```{{r}}
+df <- read.table('../../../{df}', header = T)
+df$rownum <- 1 : nrow(df)
+spot_str <- {spotlight}
+spot.idx <- as.numeric(strsplit(spot_str, '_')[[1]])
+df.sub <- df[spot.idx, ]
+df.sub$strand <- as.character(df.sub$strand)
+df.sub$strand[df.sub$strand == '-'] <- 'negative'
+df.sub$strand[df.sub$strand == '+'] <- 'positive'
+row.names(df.sub) <- NULL
+motif_logo_prefix <- '../../../{motif_prefix}'
+mash_plot_prefix <- '../../../{mash_prefix}/mash__idx'
+```
+
+```{{r, results='asis'}}
+for(i in 1 : nrow(df.sub)) {{
+    motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname[i], '__', df.sub$motif_id[i], '.png)')
+    mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx[i], '.png)')
+    cat(motif_logo, mash_plot, '\n')
+    df.sub %>% kable(format = "html", col.names = colnames(df.sub)) %>%
+      kable_styling() %>%
+      kableExtra::scroll_box(width = "100%", height = "200px")
+}}
+```
+'''.format(task_name = wildcards.task_name, motif_prefix = input[1], mash_prefix = input[2], df = input[0])
+        o = open(output[0], 'w')
+        o.write(rmd)
+        o.close()
+
+rule generate_report_html:
+    input:
+        'output/{task_name}/report/summary_table.txt',
+        'output/{task_name}/report/motif_logo/',
+        'output/{task_name}/report/mash_plot/',
+        'output/{task_name}/report/spotlight.Rmd'
+    output:
+        'output/{task_name}/report/spotlight.html'
+    shell:
+        '''
+        Rscript -e "rmarkdown::render('{input[3]}')"
+        '''
+
 rule all_report:
     input:
         'output/{task_name}/report/report.html'.format(task_name = config['task-name'])
+
+rule all_spotlight:
+    input:
+        'output/{task_name}/report/spotlight.html'.format(task_name = config['task-name'])
