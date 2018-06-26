@@ -232,7 +232,7 @@ rule generate_report_rmd:
         'output/{task_name}/report/mash_plot/',
         config['eqtl-name']
     output:
-        'output/{task_name}/report/report.Rmd'
+        temp('output/{task_name}/report/report.Rmd')
     run:
         rmd = '''---
 title: "Report for motif SNPs in (pos/neg method {task_name})"
@@ -258,6 +258,7 @@ library(knitr)
 eqtl <- read.table('../../../{eqtl_name}', header = F)
 df <- read.table('../../../{df}', header = T)
 df$eqtl_name <- eqtl$V1[df$idx]
+df$rownum <- 1 : nrow(df)
 eqtl_split <- str_match(as.character(df$eqtl_name), '([A-Za-z0-9]+).[0-9]+_([A-Za-z0-9_]+)')
 wrong.ind <- sum(df$ensembl_gene_id != eqtl_split[, 2] | df$leading_eqtl != eqtl_split[, 3])
 sum(wrong.ind)
