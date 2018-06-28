@@ -53,27 +53,26 @@ rule get_genotype:
         import gzip
         import pandas
         import io
-        snp_strs = []
-        outfiles = []
         with gzip.open(input[1], 'rt') as f:
             for i in f:
                 i = i.strip()
                 i = i.split(',')
                 outfile = '{prefix}/{name}.txt.gz'.format(prefix = output[0], name = i[0])
+                patternfile = '{prefix}/{name}.pattern'.format(prefix = output[0], name = i[0])
                 i = i[1 : ]  # remove gene id
-                snp_str = '|^'.join(i)
+                snp_str = '^\n'.join(i)
                 snp_str = '^' + snp_str
-                snp_strs.append(snp_str)
-                outfiles.append(outfile)
-        for snp_str, outfile in zip(snp_strs, outfiles):
+                pf = open(patternfile, w)
+                pf.write(snp_str + '\n')
+                pf.close()
                 cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = outfile)
                 i = os.system(cmd1)
                 print(i)
-                cmd2 = "ls {inp}; zcat < {inp} | grep -E '{snp}' >> {outfile}.tmp".format(inp = input[0], snp = snp_str, outfile = outfile)
+                cmd2 = "zcat < {inp} | egrep -f {pattern} '{snp}' >> {outfile}.tmp".format(inp = input[0], snp = snp_str, outfile = outfile, pattern = patternfile)
                 j = os.system(cmd2)
                 print(len(snp_str.split('|')))
                 print(j)
-                cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp'.format(outfile = outfile)
+                cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp; rm {pattern}'.format(outfile = outfile, pattern = patternfile)
                 k = os.system(cmd3)
                 print(k)
 
