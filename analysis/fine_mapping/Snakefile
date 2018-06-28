@@ -23,17 +23,19 @@ rule get_gene_snp:
         gene_vec = []
         for i in f:
             i = i.strip()
+            if i == '':
+                continue
             gene_vec.append('^' + i)
         f.close()
         gene_str = '|'.join(gene_vec)
-        cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = output[0])
-        print(cmd1)
+        # cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = output[0])
+        # print(cmd1)
         # os.system(cmd1)
-        cmd2 = 'zcat < {inp} | grep -E "{genes}" >> {outfile}.tmp'.format(inp = input[0], genes = gene_str, outfile = output[0])
-        # os.system(cmd2)
-        print(cmd2)
+        cmd2 = 'zcat < {inp} | grep -E "{genes}" > {outfile}.tmp'.format(inp = input[0], genes = gene_str, outfile = output[0])
+        os.system(cmd2)
+        # print(cmd2)
         cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp'.format(outfile = output[0])
-        print(cmd3)
+        # print(cmd3)
         os.system(cmd3)
 
 rule get_genotype:
@@ -121,7 +123,7 @@ rule fine_mapping:
 
 def all_map(config):
     out =  [ 'output/{task_name}/{tissue}/fine-map__{wrapper}/'.format(task_name = config['task-name'], tissue = i, wrapper = j) for i in list(config['tissue'].keys()) for j in list(config['fine-mapping-wrapper'].keys()) ]
-    print(out)
+    # print(out)
     return out
 
 rule all_map:
