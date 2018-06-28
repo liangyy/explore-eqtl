@@ -29,13 +29,13 @@ rule get_gene_snp:
         f.close()
         gene_str = '\n'.join(gene_vec)
         patternfile = '{prefix}.pattern'.format(prefix = output[0])
-        pf = open(patternfile, w)
+        pf = open(patternfile, 'w')
         pf.write(gene_str + '\n')
         pf.close()
-        cmd2 = 'zcat < {inp} | egrep -f {pattern} "{genes}" > {outfile}.tmp'.format(inp = input[0], genes = gene_str, outfile = output[0], pattern = patternfile)
+        cmd2 = 'zcat < {inp} | egrep -f {pattern} > {outfile}.tmp'.format(inp = input[0], outfile = output[0], pattern = patternfile)
         os.system(cmd2)
-        # print(cmd2)
-        cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp'.format(outfile = output[0])
+        print(i)
+        cmd3 = 'cat {outfile}.tmp | gzip > {outfile} ; rm {outfile}.tmp ; rm {pattern}'.format(outfile = output[0], pattern = patternfile)
         # print(cmd3)
         os.system(cmd3)
 
@@ -63,19 +63,18 @@ rule get_genotype:
                 i = i[1 : ]  # remove gene id
                 snp_str = '^\n'.join(i)
                 snp_str = '^' + snp_str
-                pf = open(patternfile, w)
+                pf = open(patternfile, 'w')
                 pf.write(snp_str + '\n')
                 pf.close()
                 cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = outfile)
                 i = os.system(cmd1)
-                print(i)
-                cmd2 = "zcat < {inp} | egrep -f {pattern} '{snp}' >> {outfile}.tmp".format(inp = input[0], snp = snp_str, outfile = outfile, pattern = patternfile)
+                # print('i = ', i)
+                cmd2 = "zcat < {inp} | egrep -f {pattern} >> {outfile}.tmp".format(inp = input[0], outfile = outfile, pattern = patternfile)
                 j = os.system(cmd2)
-                print(len(snp_str.split('|')))
-                print(j)
-                cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp; rm {pattern}'.format(outfile = outfile, pattern = patternfile)
+                # print('j = ', j)
+                cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp ; rm {pattern}'.format(outfile = outfile, pattern = patternfile)
                 k = os.system(cmd3)
-                print(k)
+                # print(k)
 
 rule get_expression:
     # one individual per column
