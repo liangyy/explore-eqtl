@@ -1,0 +1,18 @@
+task-name: 'heart_motif_snp'
+gene-list: 'gene_list/heart_motif_snp.txt'
+gene-snp-map: '/project/mstephens/data/internal_supp/gtex-v6-sumstat-hdf5/MatrixEQTLSumStats.gene-snp-pairs.gz'
+tissue:
+  Heart_Atrial_Appendage:
+    genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Heart_Atrial_Appendage_Analysis.snps.txt.gz'
+    gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Heart_Atrial_Appendage_Analysis.expr.txt.gz'
+    covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Heart_Atrial_Appendage_Analysis.covariates.txt.gz'
+  Heart_Left_Ventricle:
+    genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Heart_Left_Ventricle_Analysis.snps.txt.gz'
+    gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Heart_Left_Ventricle_Analysis.expr.txt.gz'
+    covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Heart_Left_Ventricle_Analysis.covariates.txt.gz'
+  Muscle_Skeletal:
+    genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Muscle_Skeletal_Analysis.snps.txt.gz'
+    gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Muscle_Skeletal_Analysis.expr.txt.gz'
+    covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Muscle_Skeletal_Analysis.covariates.txt.gz'
+fine-mapping-wrapper:
+  susie: 'scripts/susie_wrapper.R'

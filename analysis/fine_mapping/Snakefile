@@ -1,0 +1,119 @@
+# this module perform fine-mapping on a list of candidate genes (by ENST ID)
+# steps:
+# X:
+# 1. obtain snps for each gene (gene-snp-map)
+# 2. obtain genotype of each gene (tissue-specific)
+# Y:
+# 1. obtain gene expression for each gene (tissue-specific)
+# Z:
+# 1. obtain covariate for each gene (tissue-specific)
+
+
+rule get_gene_snp:
+    input:
+        config['gene-snp-map'],
+        config['gene-list']
+    output:
+        'output/{task_name}/gene_snp_map.txt.gz'
+    run:
+        import os
+        import gzip
+
+        f = open(input[1], 'r')
+        gene_vec = []
+        for i in f:
+            i = i.strip()
+            gene_vec.append('^' + i)
+        f.close()
+        gene_str = '|'.join(gene_vec)
+        cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = output[0])
+        os.system(cmd1)
+        cmd2 = 'zcat < {inp} | grep -E "{genes}" >> {outfile}.tmp'.format(inp = input[0], genes = gene_str, outfile = output[0])
+        os.system(cmd2)
+        cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp'.format(outfile = output[0])
+        os.system(cmd3)
+
+rule get_genotype:
+    # one individual per column
+    # with header (individual ID)
+    # one SNP per row
+    # first column: SNP ID
+    input:
+        config[wildcards.tissue]['genotype'],
+        'output/{task_name}/gene_snp_map.txt.gz'
+    output:
+        'output/{task_name}/{tissue}/genotype/'
+    run:
+        import os
+        import gzip
+        import pandas
+        import io
+        df = pd.DataFrame()
+        with gzip.open(input[1], 'rt') as f:
+            for i in f:
+                i = i.strip()
+                i = i.split(',')
+                outfile = '{prefix}/{name}.txt.gz'.format(prefix = output[0], name = i[0])
+                i = i[1 : ]  # remove gene id
+                snp_str = '|^'.join(i)
+                snp_str = '^' + snp_str
+                cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = outfile)
+                os.system(cmd1)
+                cmd2 = 'zcat < {inp} | grep -E "{snp}" >> {outfile}.tmp'.format(inp = input[0], snp = snp_str, outfile = outfile)
+                os.system(cmd2)
+                cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp'.format(outfile = outfile)
+                os.system(cmd3)
+
+rule get_expression:
+    # one individual per column
+    # with header (individual ID)
+    # first column: gene ID
+    input:
+        config[wildcards.tissue]['gene-expression'],
+        'output/{task_name}/gene_snp_map.txt.gz'
+    output:
+        'output/{task_name}/{tissue}/gene_expression/'
+    run:
+        import os
+        import gzip
+        import pandas
+        import io
+        df = pd.DataFrame()
+        with gzip.open(input[1], 'rt') as f:
+            for i in f:
+                i = i.strip()
+                i = i.split(',')
+                outfile = '{prefix}/{name}.txt.gz'.format(prefix = output[0], name = i[0])
+                cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = outfile)
+                os.system(cmd1)
+                cmd2 = 'zcat < {inp} | grep "^{gene}" >> {outfile}.tmp'.format(inp = input[0], gene = i[0], outfile = outfile)
+                os.system(cmd2)
+                cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp'.format(outfile = outfile)
+                os.system(cmd3)
+
+# rule get_covariate:
+    # one individual per column
+    # with header (individual ID)
+    # one covariate per row
+    # first column: covariate ID
+
+rule fine_mapping:
+    input:
+        x = 'output/{task_name}/{tissue}/genotype/',
+        y = 'output/{task_name}/{tissue}/expression/',
+        z = config[wildcards.tissue]['covariate'],
+        gene = 'output/{task_name}/gene_snp_map.txt.gz'
+    output:
+        'output/{task_name}/{tissue}/fine_mapping/'
+    params:
+        lambda wildcards: config['fine-mapping-wrapper'][wildcards.wrapper]
+    shell:
+        '''
+        Rscript scripts/fine_mapping_wrapper.R \
+            --func {params[0]} \
+            --x {input.x} \
+            --y {input.y} \
+            --z {input.z} \
+            --gene_list <(zcat {input.gene} | awk -F"," '{{print $1}}' | tr '\n' ',') \
+            --out_dir {output[0]}
+        '''
