@@ -53,6 +53,8 @@ rule get_genotype:
         import gzip
         import pandas
         import io
+        snp_strs = []
+        outfiles = []
         with gzip.open(input[1], 'rt') as f:
             for i in f:
                 i = i.strip()
@@ -61,12 +63,19 @@ rule get_genotype:
                 i = i[1 : ]  # remove gene id
                 snp_str = '|^'.join(i)
                 snp_str = '^' + snp_str
+                snp_strs.append(snp_str)
+                outfiles.append(outfile)
+        for snp_str, outfile in zip(snp_strs, outfiles):
                 cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = outfile)
-                os.system(cmd1)
-                cmd2 = 'zcat < {inp} | grep -E "{snp}" >> {outfile}.tmp'.format(inp = input[0], snp = snp_str, outfile = outfile)
-                os.system(cmd2)
+                i = os.system(cmd1)
+                print(i)
+                cmd2 = "ls {inp}; zcat < {inp} | grep -E '{snp}' >> {outfile}.tmp".format(inp = input[0], snp = snp_str, outfile = outfile)
+                j = os.system(cmd2)
+                print(len(snp_str.split('|')))
+                print(j)
                 cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp'.format(outfile = outfile)
-                os.system(cmd3)
+                k = os.system(cmd3)
+                print(k)
 
 rule get_expression:
     # one individual per column
@@ -112,12 +121,13 @@ rule fine_mapping:
         lambda wildcards: config['fine-mapping-wrapper'][wildcards.wrapper]
     shell:
         '''
+        STR=$(zcat {input.gene} | awk -F"," '{{print $1}}' | tr '\\n' ',')
         Rscript scripts/fine_mapping_wrapper.R \
             --func {params[0]} \
             --x {input.x} \
             --y {input.y} \
             --z {input.z} \
-            --gene_list <(zcat {input.gene} | awk -F"," '{{print $1}}' | tr '\n' ',') \
+            --gene_list $STR \
             --out_dir {output[0]}
         '''
 

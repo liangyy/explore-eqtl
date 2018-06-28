@@ -15,4 +15,4 @@ tissue:
     gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Muscle_Skeletal_Analysis.expr.txt.gz'
     covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Muscle_Skeletal_Analysis.covariates.txt.gz'
 fine-mapping-wrapper:
-  susie: 'scripts/susie_wrapper.R'
+  susie: 'scripts/susie_fine_mapping.R'

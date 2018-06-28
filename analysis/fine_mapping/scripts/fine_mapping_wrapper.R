@@ -29,6 +29,9 @@ for(g in genes) {
   x <- paste0(opt$x, '/', g, 'txt.gz')
   y <- paste0(opt$x, '/', g, 'txt.gz')
   o <- paste0(opt$out_dir, '/', g, '.rds')
+  if(g == '') {
+    next
+  }
   geno.df <- read.table(x, header = T)
   expr.df <- read.table(y, header = T)
   cova.df <- read.table(z, header = T)
