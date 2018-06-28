@@ -39,7 +39,7 @@ rule get_genotype:
     # one SNP per row
     # first column: SNP ID
     input:
-        lambda wildcards: config[wildcards.tissue]['genotype'],
+        lambda wildcards: config['tissue'][wildcards.tissue]['genotype'],
         'output/{task_name}/gene_snp_map.txt.gz'
     output:
         'output/{task_name}/{tissue}/genotype/'
@@ -48,7 +48,6 @@ rule get_genotype:
         import gzip
         import pandas
         import io
-        df = pd.DataFrame()
         with gzip.open(input[1], 'rt') as f:
             for i in f:
                 i = i.strip()
@@ -69,7 +68,7 @@ rule get_expression:
     # with header (individual ID)
     # first column: gene ID
     input:
-        lambda wildcards: config[wildcards.tissue]['gene-expression'],
+        lambda wildcards: config['tissue'][wildcards.tissue]['gene-expression'],
         'output/{task_name}/gene_snp_map.txt.gz'
     output:
         'output/{task_name}/{tissue}/gene_expression/'
@@ -78,7 +77,6 @@ rule get_expression:
         import gzip
         import pandas
         import io
-        df = pd.DataFrame()
         with gzip.open(input[1], 'rt') as f:
             for i in f:
                 i = i.strip()
@@ -100,11 +98,11 @@ rule get_expression:
 rule fine_mapping:
     input:
         x = 'output/{task_name}/{tissue}/genotype/',
-        y = 'output/{task_name}/{tissue}/expression/',
-        z = lambda wildcards: config[wildcards.tissue]['covariate'],
+        y = 'output/{task_name}/{tissue}/gene_expression/',
+        z = lambda wildcards: config['tissue'][wildcards.tissue]['covariate'],
         gene = 'output/{task_name}/gene_snp_map.txt.gz'
     output:
-        'output/{task_name}/{tissue}/fine_mapping/'
+        'output/{task_name}/{tissue}/fine-map__{wrapper}/'
     params:
         lambda wildcards: config['fine-mapping-wrapper'][wildcards.wrapper]
     shell:
@@ -118,6 +116,12 @@ rule fine_mapping:
             --out_dir {output[0]}
         '''
 
+def all_map(config):
+    out =  [ 'output/{task_name}/{tissue}/fine-map__{wrapper}/'.format(task_name = config['task-name'], tissue = i, wrapper = j) for i in list(config['tissue'].keys()) for j in list(config['fine-mapping-wrapper'].keys()) ]
+    print(out)
+    return out
+
 rule all_map:
     input:
-        [ 'output/{task_name}/{tissue}/fine_mapping/'.format(task_name = config['task-name'], tissue = i) for i in list(config['tissue'].keys())
+        all_map(config)
+        # [ 'output/{task_name}/{tissue}/fine-map__{wrapper}/'.format(task_name = config['task-name'], tissue = i, wrapper = j) for i in list(config['tissue'].keys()) for j in list(config['fine-mapping-wrapper'].keys()) ]

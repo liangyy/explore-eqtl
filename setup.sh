@@ -10,5 +10,5 @@ export PATH=/project2/xinhe/yanyul/softwares/bedtools2/bin:$PATH
 export PATH=/project2/xinhe/yanyul/softwares/Anaconda2/bin:$PATH
 # END
 
-alias eqtl='source activate explore-eqtl'
+alias eqtl='source activate deepvarpred_test'
 
