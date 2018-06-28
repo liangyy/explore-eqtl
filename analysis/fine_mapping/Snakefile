@@ -39,7 +39,7 @@ rule get_genotype:
     # one SNP per row
     # first column: SNP ID
     input:
-        config[wildcards.tissue]['genotype'],
+        lambda wildcards: config[wildcards.tissue]['genotype'],
         'output/{task_name}/gene_snp_map.txt.gz'
     output:
         'output/{task_name}/{tissue}/genotype/'
@@ -69,7 +69,7 @@ rule get_expression:
     # with header (individual ID)
     # first column: gene ID
     input:
-        config[wildcards.tissue]['gene-expression'],
+        lambda wildcards: config[wildcards.tissue]['gene-expression'],
         'output/{task_name}/gene_snp_map.txt.gz'
     output:
         'output/{task_name}/{tissue}/gene_expression/'
@@ -101,7 +101,7 @@ rule fine_mapping:
     input:
         x = 'output/{task_name}/{tissue}/genotype/',
         y = 'output/{task_name}/{tissue}/expression/',
-        z = config[wildcards.tissue]['covariate'],
+        z = lambda wildcards: config[wildcards.tissue]['covariate'],
         gene = 'output/{task_name}/gene_snp_map.txt.gz'
     output:
         'output/{task_name}/{tissue}/fine_mapping/'
@@ -117,3 +117,7 @@ rule fine_mapping:
             --gene_list <(zcat {input.gene} | awk -F"," '{{print $1}}' | tr '\n' ',') \
             --out_dir {output[0]}
         '''
+
+rule all_map:
+    input:
+        [ 'output/{task_name}/{tissue}/fine_mapping/'.format(task_name = config['task-name'], tissue = i) for i in list(config['tissue'].keys())

@@ -1,3 +1,7 @@
+# snakemake
+.snakemake/
+analysis/*/output/
+
 # History files
 .Rhistory
 .Rapp.history
