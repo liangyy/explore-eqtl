@@ -18,6 +18,7 @@ rule get_gene_snp:
     run:
         import os
         import gzip
+        import subprocess, signal
 
         f = open(input[1], 'r')
         gene_vec = []
@@ -33,7 +34,7 @@ rule get_gene_snp:
         pf.write(gene_str + '\n')
         pf.close()
         cmd2 = 'zcat < {inp} | egrep -f {pattern} > {outfile}.tmp'.format(inp = input[0], outfile = output[0], pattern = patternfile)
-        os.system(cmd2)
+        subprocess.Popen(cmd2, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
         print(i)
         cmd3 = 'cat {outfile}.tmp | gzip > {outfile} ; rm {outfile}.tmp ; rm {pattern}'.format(outfile = output[0], pattern = patternfile)
         # print(cmd3)
@@ -54,6 +55,7 @@ rule get_genotype:
         import gzip
         import pandas
         import io
+        import subprocess, signal
         with gzip.open(input[1], 'rt') as f:
             for i in f:
                 i = i.strip()
@@ -67,13 +69,13 @@ rule get_genotype:
                 pf.write(snp_str + '\n')
                 pf.close()
                 cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = outfile)
-                i = os.system(cmd1)
+                i = subprocess.Popen(cmd1, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
                 # print('i = ', i)
                 cmd2 = "zcat < {inp} | egrep -f {pattern} >> {outfile}.tmp".format(inp = input[0], outfile = outfile, pattern = patternfile)
-                j = os.system(cmd2)
+                j = subprocess.Popen(cmd2, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
                 # print('j = ', j)
                 cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp ; rm {pattern}'.format(outfile = outfile, pattern = patternfile)
-                k = os.system(cmd3)
+                k = subprocess.Popen(cmd3, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
                 # print(k)
 
 rule get_expression:
@@ -90,17 +92,18 @@ rule get_expression:
         import gzip
         import pandas
         import io
+        import subprocess, signal
         with gzip.open(input[1], 'rt') as f:
             for i in f:
                 i = i.strip()
                 i = i.split(',')
                 outfile = '{prefix}/{name}.txt.gz'.format(prefix = output[0], name = i[0])
                 cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = outfile)
-                os.system(cmd1)
+                subprocess.Popen(cmd1, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
                 cmd2 = 'zcat < {inp} | grep "^{gene}" >> {outfile}.tmp'.format(inp = input[0], gene = i[0], outfile = outfile)
-                os.system(cmd2)
+                subprocess.Popen(cmd2, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
                 cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp'.format(outfile = outfile)
-                os.system(cmd3)
+                subprocess.Popen(cmd3, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
 
 # rule get_covariate:
     # one individual per column
