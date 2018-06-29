@@ -43,6 +43,6 @@ for(g in genes) {
   geno.cleaned <- geno[, match(indv, colnames(geno))]
   expr.cleaned <- expr[, match(indv, colnames(geno))]
   cova.cleaned <- cova[, match(indv, colnames(geno))]
-  out <- fineMapping(t(data.matrix(geno)), as.numeric(expr[1, ]), t(data.matrix(cova)))
-  saveRDS(out, file = o)
+  out <- fineMapping(t(data.matrix(geno.cleaned)), as.numeric(expr.cleaned[1, ]), t(data.matrix(cova.cleaned)))
+  saveRDS(list(fitted = out, X = geno.cleaned), file = o)
 }
