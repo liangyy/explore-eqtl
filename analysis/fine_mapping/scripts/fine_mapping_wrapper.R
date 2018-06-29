@@ -26,8 +26,8 @@ source(opt$func) # obtain fine-mapping function in opt$func: method = function(x
 z <- opt$z
 genes <- strsplit(opt$gene, ',')[[1]]
 for(g in genes) {
-  x <- paste0(opt$x, '/', g, 'txt.gz')
-  y <- paste0(opt$x, '/', g, 'txt.gz')
+  x <- paste0(opt$x, '/', g, '.txt.gz')
+  y <- paste0(opt$x, '/', g, '.txt.gz')
   o <- paste0(opt$out_dir, '/', g, '.rds')
   if(g == '') {
     next

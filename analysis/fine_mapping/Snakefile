@@ -34,7 +34,7 @@ rule get_gene_snp:
         pf.write(gene_str + '\n')
         pf.close()
         cmd2 = 'zcat < {inp} | egrep -f {pattern} > {outfile}.tmp'.format(inp = input[0], outfile = output[0], pattern = patternfile)
-        subprocess.Popen(cmd2, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
+        subprocess.Popen(cmd2, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL)).wait()
         print(i)
         cmd3 = 'cat {outfile}.tmp | gzip > {outfile} ; rm {outfile}.tmp ; rm {pattern}'.format(outfile = output[0], pattern = patternfile)
         # print(cmd3)
@@ -63,19 +63,19 @@ rule get_genotype:
                 outfile = '{prefix}/{name}.txt.gz'.format(prefix = output[0], name = i[0])
                 patternfile = '{prefix}/{name}.pattern'.format(prefix = output[0], name = i[0])
                 i = i[1 : ]  # remove gene id
-                snp_str = '^\n'.join(i)
+                snp_str = '\n^'.join(i)
                 snp_str = '^' + snp_str
                 pf = open(patternfile, 'w')
                 pf.write(snp_str + '\n')
                 pf.close()
                 cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = outfile)
-                i = subprocess.Popen(cmd1, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
+                i = subprocess.Popen(cmd1, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL)).wait()
                 # print('i = ', i)
                 cmd2 = "zcat < {inp} | egrep -f {pattern} >> {outfile}.tmp".format(inp = input[0], outfile = outfile, pattern = patternfile)
-                j = subprocess.Popen(cmd2, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
+                j = subprocess.Popen(cmd2, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL)).wait()
                 # print('j = ', j)
                 cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp ; rm {pattern}'.format(outfile = outfile, pattern = patternfile)
-                k = subprocess.Popen(cmd3, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
+                k = subprocess.Popen(cmd3, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL)).wait()
                 # print(k)
 
 rule get_expression:
@@ -99,11 +99,11 @@ rule get_expression:
                 i = i.split(',')
                 outfile = '{prefix}/{name}.txt.gz'.format(prefix = output[0], name = i[0])
                 cmd1 = 'zcat < {inp} | head -n 1 > {outfile}.tmp'.format(inp = input[0], outfile = outfile)
-                subprocess.Popen(cmd1, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
+                subprocess.Popen(cmd1, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL)).wait()
                 cmd2 = 'zcat < {inp} | grep "^{gene}" >> {outfile}.tmp'.format(inp = input[0], gene = i[0], outfile = outfile)
-                subprocess.Popen(cmd2, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
+                subprocess.Popen(cmd2, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL)).wait()
                 cmd3 = 'cat {outfile}.tmp | gzip > {outfile}; rm {outfile}.tmp'.format(outfile = outfile)
-                subprocess.Popen(cmd3, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL).wait()
+                subprocess.Popen(cmd3, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, preexec_fn = lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL)).wait()
 
 # rule get_covariate:
     # one individual per column
