@@ -121,6 +121,8 @@ rule fine_mapping:
         'output/{task_name}/{tissue}/fine-map__{wrapper}/'
     params:
         lambda wildcards: config['fine-mapping-wrapper'][wildcards.wrapper]
+    log:
+        'output/{task_name}/{tissue}/fine-map__{wrapper}.log'
     shell:
         '''
         STR=$(zcat {input.gene} | awk -F"," '{{print $1}}' | tr '\\n' ',')
@@ -130,7 +132,7 @@ rule fine_mapping:
             --y {input.y} \
             --z {input.z} \
             --gene_list $STR \
-            --out_dir {output[0]}
+            --out_dir {output[0]} > {log}
         '''
 
 def all_map(config):
