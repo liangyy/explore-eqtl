@@ -215,6 +215,7 @@ for(rds.dir in rds.dirs) {{
       candidate.snp <- unique(as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2]))
       abline(v = coordinate[coordinate %in% leading.snp], col = 'red')
       abline(v = coordinate[coordinate %in% candidate.snp], col = 'blue')
+      cat('\n', '\n')
     }}
   }}
 }}
