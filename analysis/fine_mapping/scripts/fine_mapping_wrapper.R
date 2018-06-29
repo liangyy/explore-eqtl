@@ -17,7 +17,7 @@ option_list = list(
 
 # x: 1. header: individual ID; 2. one individual per column; 3. first column: SNP ID
 # y: 1. header: individual ID; 2. one individual per column; 3. first column: gene ID
-# z: 1. header: individual ID; 2. one individual per column; 3. covariate ID
+# z: 1. header: individual ID; 2. one individual per column; 3. first column: covariate ID
 
 args_parser = OptionParser(option_list=option_list);
 opt = parse_args(args_parser);
