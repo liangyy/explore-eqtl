@@ -153,8 +153,8 @@ rule fine_mapping:
 
 rule report_rmd:
     input:
-        [ 'output/{{task_name}}/{tissue}/fine-map__{{wrapper}}/'.format(tissue = i) for i in list(config['tissue'].keys()) ],
-        config['highlight-snp']
+        rds = [ 'output/{{task_name}}/{tissue}/fine-map__{{wrapper}}/'.format(tissue = i) for i in list(config['tissue'].keys()) ],
+        l = config['highlight-snp']
     params:
         ','.join([ 'output/{{task_name}}/{tissue}/fine-map__{{wrapper}}/'.format(tissue = i) for i in list(config['tissue'].keys()) ])
     output:
@@ -171,7 +171,7 @@ output:
     highlight: textmate
 ---
 
-```{r setup, include=FALSE}
+```{{r setup, include=FALSE}}
 knitr::opts_chunk$set(echo = TRUE)
 library(stringr)
 library(pander)
@@ -182,31 +182,31 @@ panderOptions('table.split.table', Inf)
 # Setup
 
 ```{{r}}
+print(paste0('../../../', '{highlight_snp}'))
 if('{highlight_snp}' != '') {{
-  highlight.snp.df <- read.table('{highlight_snp}', header = T)
+  highlight.snp.df <- read.table(paste0('../../../', '{highlight_snp}'), header = T)
 }} else {{
   highlight.snp.df <- NULL
 }}
-
 rds.dirs <- strsplit('{rds_dir_str}', ',')[[1]]
 ```
 
 ```{{r, results='asis'}}
 for(rds.dir in rds.dirs) {{
-  tissue <- basename(basename(rds.dir))
+  tissue <- basename(dirname(rds.dir))
   cat('#', tissue, '\n', '\n')
-  rdss <- Sys.glob(paste0(red.dir, '/', '*.rds'))
+  rdss <- Sys.glob(paste0('../../../', rds.dir, '/', '*.rds'))
   for(rds in rdss) {{
-    gene <- sub('.rds', '', rds, fixed = T)
+    gene <- sub('.rds', '', basename(rds), fixed = T)
     cat('##', gene, '\n', '\n')
     out <- readRDS(rds)
-    cs <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, 2 : ncol(out$X)])), coverage = .9)
+    cs <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, -ncol(out$X)])), coverage = .9)
     pander(cs$purity)
     pip <- susieR::susie_get_PIP(out$fitted, cs$cs_index)
     coordinate <- as.numeric(str_match(out$X$SNP_ID, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
 
     plot(coordinate, pip, main = 'PIP (red: leadingSNP; blue: candidateSNP')
-    for(i in cs$cs_index) {{
+    for(i in names(cs$cs_index)) {{
       points(coordinate[cs$cs[[i]]], pip[cs$cs[[i]]], col = i, pch = 16)
     }}
     if(!is.null(highlight.snp.df)) {{
@@ -220,16 +220,19 @@ for(rds.dir in rds.dirs) {{
 }}
 
 ```
-'''.format(map = wildcards.wrapper, task_name = wildcards.task_name, highlight_snp = input[1], rds_dir_str = params[0])
+'''.format(map = wildcards.wrapper, task_name = wildcards.task_name, highlight_snp = input.l, rds_dir_str = params[0])
+        o = open(output[0], 'w')
+        o.write(rmd)
+        o.close()
 
-rule report_rmd:
+rule report_html:
     input:
         files = [ 'output/{{task_name}}/{tissue}/fine-map__{{wrapper}}/'.format(tissue = i) for i in list(config['tissue'].keys()) ],
         h = config['highlight-snp'],
         rmd = 'output/{task_name}/report/{wrapper}.Rmd'
     output:
         'output/{task_name}/report/{wrapper}.html'
-    shell
+    shell:
         '''
         Rscript -e "rmarkdown::render('{input.rmd}')"
         '''
