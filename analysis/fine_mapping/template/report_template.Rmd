@@ -1,0 +1,52 @@
+---
+title: "Report for fine-mapping ({map}) result in {task_name}"
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+    theme: cosmo
+    highlight: textmate
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
+library(pander)
+panderOptions('knitr.auto.asis', FALSE)
+panderOptions('table.split.table', Inf)
+```
+
+# Setup
+
+```{r}
+highlight.snp.df <- read.table('{highlight_snp}', header = T)
+rds.dirs <- strsplit('{rds_dir_str}', ',')[[1]]
+```
+
+```{r, results='asis'}
+for(rds.dir in rds.dirs) {
+  tissue <- basename(basename(rds.dir))
+  cat('#', tissue, '\n', '\n')
+  rdss <- Sys.glob(paste0(red.dir, '/', '*.rds'))
+  for(rds in rdss) {
+    gene <- sub('.rds', '', rds, fixed = T)
+    cat('##', gene, '\n', '\n')
+    out <- readRDS(rds)
+    cs <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, 2 : ncol(out$X)])), coverage = .9)
+    pander(cs$purity)
+    pip <- susieR::susie_get_PIP(out$fitted, cs$cs_index)
+    coordinate <- as.numeric(str_match(out$X$SNP_ID, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
+    highlight.snp <- highlight.snp.df[highlight.snp.df$ensembl_gene_id == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2] & highlight.snp.df$tissue == tissue, ]
+    leading.snp <- as.numeric(str_match(highlight.snp$leading_eqtl[1], '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
+    candidate.snp <- as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
+    plot(coordinate, pip, main = 'PIP (red: leadingSNP; blue: candidateSNP')
+    for(i in cs$cs_index) {
+      points(coordinate[cs$cs[[i]]], pip[cs$cs[[i]]], col = i, pch = 16)
+    }
+    abline(v = coordinate[coordinate %in% leading.snp], col = 'red')
+    abline(v = coordinate[coordinate %in% candidate.snp], col = 'blue')
+  }
+}
+
+```
