@@ -206,7 +206,7 @@ for(rds.dir in rds.dirs) {{
     coordinate <- as.numeric(str_match(out$X$SNP_ID, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
 
     plot(coordinate, pip, main = 'PIP (red: leadingSNP; blue: candidateSNP')
-    for(i in names(cs$cs_index)) {{
+    for(i in 1 : length(cs$cs_index)) {{
       points(coordinate[cs$cs[[i]]], pip[cs$cs[[i]]], col = i, pch = 16)
     }}
     if(!is.null(highlight.snp.df)) {{
