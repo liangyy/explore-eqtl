@@ -28,7 +28,7 @@ genes <- strsplit(opt$gene, ',')[[1]]
 for(g in genes) {
   print(g)
   x <- paste0(opt$x, '/', g, '.txt.gz')
-  y <- paste0(opt$x, '/', g, '.txt.gz')
+  y <- paste0(opt$y, '/', g, '.txt.gz')
   o <- paste0(opt$out_dir, '/', g, '.rds')
   if(g == '') {
     next
@@ -42,8 +42,8 @@ for(g in genes) {
   indv <- intersect(intersect(colnames(geno), colnames(expr)), colnames(cova))
   indv <- indv[order(indv)]
   geno.cleaned <- geno[, match(indv, colnames(geno))]
-  expr.cleaned <- expr[, match(indv, colnames(geno))]
-  cova.cleaned <- cova[, match(indv, colnames(geno))]
+  expr.cleaned <- expr[, match(indv, colnames(expr))]
+  cova.cleaned <- cova[, match(indv, colnames(cova))]
   out <- fineMapping(t(data.matrix(geno.cleaned)), as.numeric(expr.cleaned[1, ]), t(data.matrix(cova.cleaned)))
   geno.cleaned$SNP_ID <- geno.df[, 1]
   saveRDS(list(fitted = out, X = geno.cleaned), file = o)
