@@ -158,7 +158,7 @@ rule report_rmd:
     params:
         ','.join([ 'output/{{task_name}}/{tissue}/fine-map__{{wrapper}}/'.format(tissue = i) for i in list(config['tissue'].keys()) ])
     output:
-        'output/{task_name}/report/{wrapper}.Rmd'
+        temp('output/{task_name}/report/{wrapper}.Rmd')
     run:
         rmd = '''---
 title: "Report for fine-mapping ({map}) result in {task_name}"
