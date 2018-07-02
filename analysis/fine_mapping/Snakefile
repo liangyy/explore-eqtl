@@ -207,7 +207,7 @@ for(rds.dir in rds.dirs) {{
     pip <- susieR::susie_get_PIP(out$fitted, cs$cs_index)
     coordinate <- as.numeric(str_match(out$X$SNP_ID, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
     df <- data.frame(coordinate = coordinate, pip = pip)
-    df$cs <- NA
+    df$cs <- -1
     if(length(cs$cs_index) != 0) {{
       for(i in 1 : length(cs$cs_index)) {{
         df$cs[cs$cs[[i]]] <- cs$cs_index[i]
