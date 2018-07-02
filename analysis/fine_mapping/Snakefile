@@ -194,6 +194,7 @@ rds.dirs <- strsplit('{rds_dir_str}', ',')[[1]]
 ```
 
 ```{{r, results='asis'}}
+output <- list()
 for(rds.dir in rds.dirs) {{
   tissue <- basename(dirname(rds.dir))
   cat('#', tissue, '\n', '\n')
@@ -203,7 +204,10 @@ for(rds.dir in rds.dirs) {{
     cat('##', gene, '\n', '\n')
     out <- readRDS(rds)
     cs <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, -ncol(out$X)])), coverage = .95)
+
+    # output[[length(output) + 1]] <- paste0(capture.output(pander(cs$purity)), collapse = '\\n')
     pander(cs$purity)
+
     pip <- susieR::susie_get_PIP(out$fitted, cs$cs_index)
     coordinate <- as.numeric(str_match(out$X$SNP_ID, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
     df <- data.frame(coordinate = coordinate, pip = pip)
@@ -222,11 +226,29 @@ for(rds.dir in rds.dirs) {{
       p <- p + geom_vline(xintercept = candidate.snp, color = 'blue')
     }}
     p <- p + geom_vline(xintercept = leading.snp, color = 'red')
-    ggplotly(p)
+    x <- as.widget(ggplotly(p))
+    output[[length(output) + 1]] <- x
+    cat(renderTags(x)$html)
     cat('\n', '\n')
   }}
 }}
 
+```
+
+```{{r echo=FALSE, messages=FALSE, warning=FALSE}}
+# attach the Dependencies
+# since the do not get included with renderTags(...)$html
+deps <- lapply(
+  Filter(function(x){inherits(x,"htmlwidget")},output),
+  function(hw){{
+    renderTags(hw)$dependencies
+  }}
+)
+
+attachDependencies(
+  tagList(),
+  unlist(deps,recursive=FALSE)
+)
 ```
 '''.format(map = wildcards.wrapper, task_name = wildcards.task_name, highlight_snp = input.l, rds_dir_str = params[0])
         o = open(output[0], 'w')
