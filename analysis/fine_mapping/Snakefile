@@ -218,7 +218,7 @@ for(rds.dir in rds.dirs) {{
         df$cs[cs$cs[[i]]] <- cs$cs_index[i]
       }}
     }}
-    p <- ggplot(df) + geom_point(aes(x = coordinate, y = pip, color = cs))
+    p <- ggplot(df) + geom_point(aes(x = coordinate, y = pip, color = factor(cs)))
     p <- p + ggtitle('PIP (red line: leadingSNP; blue line: candidateSNP)')
     if(!is.null(highlight.snp.df)) {{
       highlight.snp <- highlight.snp.df[highlight.snp.df$ensembl_gene_id == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2] & highlight.snp.df$tissue == tissue, ]
