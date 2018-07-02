@@ -175,6 +175,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 library(stringr)
 library(pander)
+library(plotly)
+library(ggplot2)
 panderOptions('knitr.auto.asis', FALSE)
 panderOptions('table.split.table', Inf)
 ```
@@ -204,21 +206,24 @@ for(rds.dir in rds.dirs) {{
     pander(cs$purity)
     pip <- susieR::susie_get_PIP(out$fitted, cs$cs_index)
     coordinate <- as.numeric(str_match(out$X$SNP_ID, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
-
-    plot(coordinate, pip, main = 'PIP (redi line: leadingSNP; blue line: candidateSNP)')
+    df <- data.frame(coordinate = coordinate, pip = pip)
+    df$cs <- NA
     if(length(cs$cs_index) != 0) {{
       for(i in 1 : length(cs$cs_index)) {{
-        points(coordinate[cs$cs[[i]]], pip[cs$cs[[i]]], col = i + 1, pch = 16)
+        df$cs[cs$cs[[i]]] <- cs$cs_index[i]
       }}
     }}
+    p <- ggplot(df) + geom_point(aes(x = coordinate, y = pip, color = cs))
+    p <- p + ggtitle('PIP (red line: leadingSNP; blue line: candidateSNP)')
     if(!is.null(highlight.snp.df)) {{
       highlight.snp <- highlight.snp.df[highlight.snp.df$ensembl_gene_id == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2] & highlight.snp.df$tissue == tissue, ]
       leading.snp <- as.numeric(str_match(highlight.snp$leading_eqtl[1], '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
       candidate.snp <- unique(as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2]))
-      abline(v = coordinate[coordinate %in% leading.snp], col = 'red')
-      abline(v = coordinate[coordinate %in% candidate.snp], col = 'blue')
-      cat('\n', '\n')
+      p <- p + geom_vline(xintercept = candidate.snp, color = 'blue')
     }}
+    p <- p + geom_vline(xintercept = 'red')
+    ggplotly(p)
+    cat('\n', '\n')
   }}
 }}
 
