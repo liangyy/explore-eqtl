@@ -177,6 +177,7 @@ library(stringr)
 library(pander)
 library(plotly)
 library(ggplot2)
+library(htmltools)
 panderOptions('knitr.auto.asis', FALSE)
 panderOptions('table.split.table', Inf)
 ```
@@ -201,7 +202,7 @@ for(rds.dir in rds.dirs) {{
   rdss <- Sys.glob(paste0('../../../', rds.dir, '/', '*.rds'))
   for(rds in rdss) {{
     gene <- sub('.rds', '', basename(rds), fixed = T)
-    cat('##', gene, '\n', '\n')
+    cat('##', gene, '\\n', '\\n')
     out <- readRDS(rds)
     cs <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, -ncol(out$X)])), coverage = .95)
 
@@ -229,7 +230,7 @@ for(rds.dir in rds.dirs) {{
     x <- as.widget(ggplotly(p))
     output[[length(output) + 1]] <- x
     cat(renderTags(x)$html)
-    cat('\n', '\n')
+    cat('\\n', '\\n')
   }}
 }}
 
@@ -239,7 +240,7 @@ for(rds.dir in rds.dirs) {{
 # attach the Dependencies
 # since the do not get included with renderTags(...)$html
 deps <- lapply(
-  Filter(function(x){inherits(x,"htmlwidget")},output),
+  Filter(function(x){{inherits(x,"htmlwidget")}},output),
   function(hw){{
     renderTags(hw)$dependencies
   }}
