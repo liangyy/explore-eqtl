@@ -1,0 +1,15 @@
+task-name: 'network_ts'
+flash: '../../output/gtex_flash.rds'
+mash: '../../output/gtex_mash.rds'
+eqtl-meta: '../../output/strong_eqtl_annotated.txt.gz'
+eqtl-name: '../../output/strong_eqtl_names.txt'
+# script_defining_pos_neg: 'scripts/first_try.R'
+motif-database:
+  human: '../../data/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme'
+  jaspar: '../../data/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme'
+  cisbp: '../../data/motif_databases/CIS-BP/Homo_sapiens.meme'
+window_size: 1000
+genotype:
+  Heart_Atrial_Appendage: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Heart_Atrial_Appendage_Analysis.snps.txt.gz'
+  Heart_Left_Ventricle: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Heart_Left_Ventricle_Analysis.snps.txt.gz'
+  Muscle_Skeletal: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Muscle_Skeletal_Analysis.snps.txt.gz'
