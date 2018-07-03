@@ -12,11 +12,10 @@ getPosNegEQTL <- function(flash, mash) {
   df <- read.table(temp, header = F)
   eqtl <- read.table('../../output/strong_eqtl_names.txt', header = F)
   e <- 1 : nrow(eqtl)
-  cond1 <- eqtl[, 1] %in% df[, 1]
-  heart.idx <- c(25, 26, 29)
+  cond1 <- stringr::str_match(eqtl[, 1], '([A-Za-z0-9]+).[A-Za-z0-9_]+')[, 2]  %in% df[, 1]
   l.five <- flash$EL[, 5]
   l.one <- flash$EL[, 1]
-  cond2 <- abs(l.five) > 8
+  cond2 <- abs(l.five) > 3
   pos.idx <- e[cond1 & cond2]
   neg.idx <- e[(abs(l.five) < 1 & abs(l.one) > 50)]
   cmd <- paste('rm -f', temp)
