@@ -9,6 +9,13 @@ motif-database:
   jaspar: '../../data/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme'
   cisbp: '../../data/motif_databases/CIS-BP/Homo_sapiens.meme'
 window_size: 1000
+motif-list:  # http://www.pnas.org/content/108/14/5632
+  pnas-human:
+    path: 'motif_list/motif_list-human.pnas.txt'
+    database: 'human'
+  pnas-jaspar:
+    path: 'motif_list/motif_list-jaspar.pnas.txt'
+    database: 'jaspar'
 genotype:
   Heart_Atrial_Appendage: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Heart_Atrial_Appendage_Analysis.snps.txt.gz'
   Heart_Left_Ventricle: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Heart_Left_Ventricle_Analysis.snps.txt.gz'
