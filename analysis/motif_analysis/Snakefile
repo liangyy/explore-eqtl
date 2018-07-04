@@ -271,36 +271,40 @@ mash_plot_prefix <- '../../../{mash_prefix}/mash__idx'
 
 ```{{r, results='asis'}}
 df.sub <- df[df$motif_from == 'from_enrichment', ]
-df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.sub$motif_id, '.png)')
-df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')
-df.show <- df.sub
-df.show <- df.show[, - which(colnames(df.show) %in% c('idx', 'eqtl_name', 'motif_from'))]
-df.show <- df.show[order(df.show$r ^ 2, decreasing = T), ]
-df.show$strand <- as.character(df.show$strand)
-df.show$strand[df.show$strand == '-'] <- 'negative'
-df.show$strand[df.show$strand == '+'] <- 'positive'
-row.names(df.show) <- NULL
-df.show %>% kable(format = "html", col.names = colnames(df.show)) %>%
-  kable_styling() %>%
-  kableExtra::scroll_box(width = "100%", height = "500px")
+if(nrow(df.sub) != 0) {{
+  df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.sub$motif_id, '.png)')
+  df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')
+  df.show <- df.sub
+  df.show <- df.show[, - which(colnames(df.show) %in% c('idx', 'eqtl_name', 'motif_from'))]
+  df.show <- df.show[order(df.show$r ^ 2, decreasing = T), ]
+  df.show$strand <- as.character(df.show$strand)
+  df.show$strand[df.show$strand == '-'] <- 'negative'
+  df.show$strand[df.show$strand == '+'] <- 'positive'
+  row.names(df.show) <- NULL
+  df.show %>% kable(format = "html", col.names = colnames(df.show)) %>%
+    kable_styling() %>%
+    kableExtra::scroll_box(width = "100%", height = "500px")
+}}
 ```
 
 # Motifs obtained from pre-defined list
 
 ```{{r, results='asis'}}
 df.sub <- df[df$motif_from == 'from_predefined_list', ]
-df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.sub$motif_id, '.png)')
-df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')
-df.show <- df.sub
-df.show <- df.show[, - which(colnames(df.show) %in% c('idx', 'eqtl_name', 'motif_from'))]
-df.show <- df.show[order(df.show$r ^ 2, decreasing = T), ]
-df.show$strand <- as.character(df.show$strand)
-df.show$strand[df.show$strand == '-'] <- 'negative'
-df.show$strand[df.show$strand == '+'] <- 'positive'
-row.names(df.show) <- NULL
-df.show %>% kable(format = "html", col.names = colnames(df.show)) %>%
-  kable_styling() %>%
-  kableExtra::scroll_box(width = "100%", height = "500px")
+if(nrow(df.sub != 0)) {{
+  df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.sub$motif_id, '.png)')
+  df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')
+  df.show <- df.sub
+  df.show <- df.show[, - which(colnames(df.show) %in% c('idx', 'eqtl_name', 'motif_from'))]
+  df.show <- df.show[order(df.show$r ^ 2, decreasing = T), ]
+  df.show$strand <- as.character(df.show$strand)
+  df.show$strand[df.show$strand == '-'] <- 'negative'
+  df.show$strand[df.show$strand == '+'] <- 'positive'
+  row.names(df.show) <- NULL
+  df.show %>% kable(format = "html", col.names = colnames(df.show)) %>%
+    kable_styling() %>%
+    kableExtra::scroll_box(width = "100%", height = "500px")
+}}
 ```
 '''.format(task_name = wildcards.task_name, motif_prefix = input[1], mash_prefix = input[2], df = input[0], eqtl_name = input[3])
         o = open(output[0], 'w')

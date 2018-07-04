@@ -31,7 +31,7 @@ def ld(snp, geno):
 pattern = '$1=="{snp_id}"'
 try:
     df = pd.read_table(args.pair_list, sep = '\t')
-except pd.errors.EmptyDataError or pd.io.common.EmptyDataError:
+except pd.io.common.EmptyDataError:
     cmd = 'touch {filename}'.format(filename = args.output)
     os.system(cmd)
     sys.exit()
