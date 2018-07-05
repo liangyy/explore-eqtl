@@ -4,8 +4,8 @@ gene-snp-map: '/project/mstephens/data/internal_supp/gtex-v6-sumstat-hdf5/Matrix
 tissue:
   Esophagus_Mucosa:
     genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Esophagus_Mucosa_Analysis.snps.txt.gz'
-    gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Esophagus_Mucosa_Appendage_Analysis.expr.txt.gz'
-    covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Esophagus_Mucosa_Appendage_Analysis.covariates.txt.gz'
+    gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Esophagus_Mucosa_Analysis.expr.txt.gz'
+    covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Esophagus_Mucosa_Analysis.covariates.txt.gz'
   Adrenal_Gland:
     genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Adrenal_Gland_Analysis.snps.txt.gz'
     gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Adrenal_Gland_Analysis.expr.txt.gz'
@@ -14,6 +14,10 @@ tissue:
     genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Artery_Aorta_Analysis.snps.txt.gz'
     gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Artery_Aorta_Analysis.expr.txt.gz'
     covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Artery_Aorta_Analysis.covariates.txt.gz'
+  Artery_Coronary:
+    genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Artery_Coronary_Analysis.snps.txt.gz'
+    gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Artery_Coronary_Analysis.expr.txt.gz'
+    covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Artery_Coronary_Analysis.covariates.txt.gz'
 fine-mapping-wrapper:
   susie: 'scripts/susie_fine_mapping.R'
 highlight-snp: '../motif_analysis/output/first_try/report/summary_table.txt'
