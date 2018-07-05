@@ -226,7 +226,7 @@ for(rds.dir in rds.dirs) {{
       candidate.snp <- unique(as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2]))
       p <- p + geom_vline(xintercept = candidate.snp, color = 'blue')
     }}
-    p <- p + geom_vline(xintercept = leading.snp, color = 'red')
+    p <- p + geom_vline(xintercept = leading.snp, color = 'red', linetype = 2)
     x <- as.widget(ggplotly(p))
     output[[length(output) + 1]] <- x
     cat(renderTags(x)$html)
