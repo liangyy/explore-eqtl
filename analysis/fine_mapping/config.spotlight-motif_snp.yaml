@@ -1,4 +1,4 @@
-task-name: 'heart_motif_snp'
+task-name: 'spotlight-heart_motif_snp'
 fine-mapping:
   dir-name: 'fine-map__susie'
   data:
@@ -8,4 +8,4 @@ fine-mapping:
       dir: 'output/heart_motif_snp-more_tissue/'
 motif-snp:
   dir: '../motif_analysis/output/first_try/report/'
-gene: 'ENSG00000185615.11,ENSG00000105738.6,ENSG00000139880.15'
+gene: 'ENSG00000185615.11,ENSG00000105738.6,ENSG00000139880.15,ENSG00000232112.3'

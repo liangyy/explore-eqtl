@@ -3,12 +3,12 @@
 import glob
 import ntpath
 
-class Input:
-    def __init__(self, s, ma, mo, rdss):
-        self.summary = s
-        self.mash_plot_dir = ma
-        self.motif_logo_dir = mo
-        self.rdss = rdss
+# class Input:
+#     def __init__(self, s, ma, mo, rdss):
+#         self.summary = s
+#         self.mash_plot_dir = ma
+#         self.motif_logo_dir = mo
+#         self.rdss = rdss
 
 def get_inputs(config, gene):
     summary = '{dir}/summary_table.txt'.format(dir = config['motif-snp']['dir'])
@@ -22,14 +22,14 @@ def get_inputs(config, gene):
             if ntpath.basename(d) in ('report', 'gene_snp_map.txt.gz'):
                 continue
             else:
-                rdss.append('{dir}/{name}/{gene}.rds'.format(dir = d, name = config['fine-mapping']['dir-name']))
-    return Input(summary, mash_plot_dir, motif_logo_dir, rdss)
+                rdss.append('{dir}/{name}/{gene}.rds'.format(dir = d, gene = gene, name = config['fine-mapping']['dir-name']))
+    return [summary, mash_plot_dir, motif_logo_dir] + rdss
 
 rule gen_report_rmd:
     input:
         lambda wildcards: get_inputs(config, wildcards.gene)
     output:
-        'output/{task_name}/{gene}.Rmd'
+        temp('output/{task_name}/{gene}.Rmd')
     run:
         rmd = '''---
 title: "Spotligt of {gene}"
@@ -42,7 +42,7 @@ output:
     highlight: textmate
 ---
 
-```{r setup, include=FALSE}
+```{{r setup, include=FALSE}}
 knitr::opts_chunk$set(echo = TRUE)
 library(stringr)
 library(pander)
@@ -57,13 +57,19 @@ source('../../../../scripts/mylib.R')
 # Setup
 
 ```{{r, results='asis'}}
-highlight.snp.df <- read.table(paste0('../', '{motif_summary}', header = T)
+highlight.snp.df <- read.table(paste0('../../', '{motif_summary}'), header = T)
 rdss <- strsplit('{rds_str}', ',')[[1]]
 gene <- '{gene}'
-idx <- highlight.snp.df$idx[1]
-mash <- paste0('../', '{mash_folder}', '/', 'mash__idx', idx, '.png')
-motif_prefix <- paste0('../', '{motif_folder}'
+motif_prefix <- paste0('../../', '{motif_folder}')
+cols <- c('gene_name', 'motif_snp', 'r', 'motif_id', 'motif_name', 'motif_qval', 'motif_snp.pos', 'motif.length', 'strand', 'tissue', 'pip')
+tissue <- basename(dirname(dirname(rdss[1])))
+highlight.snp <- highlight.snp.df[highlight.snp.df$ensembl_gene_id == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2] & highlight.snp.df$tissue == tissue, ]
+idx <- highlight.snp$idx[1]
+mash <- paste0('../../', '{mash_folder}', '/', 'mash__idx', idx, '.png')
 cat('\n', paste0('![](', mash, ')'), '\n', '\n')
+highlight.snp.df$strand <- as.character(highlight.snp.df$strand)
+highlight.snp.df$strand[highlight.snp.df$strand == '-'] <- 'negative'
+highlight.snp.df$strand[highlight.snp.df$strand == '+'] <- 'positive'
 ```
 
 # Results
@@ -77,15 +83,18 @@ mytheme <- gridExtra::ttheme_default(
     rowhead = list(fg_params=list(cex = .7)))
 for(rds in rdss) {{
   tissue <- basename(dirname(dirname(rds)))
-  out <- readRDS(rds)
-  cs0 <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, 2 : ncol(out$X)])), min_abs_corr = 0)
+  out <- readRDS(paste0('../../', rds))
+  cs0 <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, -ncol(out$X)])), min_abs_corr = 0)
   if(nrow(cs0$purity) > 0) {{
     cs0$purity <- round(cs0$purity, digits = 2)
     cs0$purity$tissue <- tissue
   }}
   a <- cs0$purity
-  tb0 <- tableGrob(cs0$purity, widths=unit(rep(1/ncol(a), ncol(a)),"npc")-unit(1,"line"), theme = mytheme)
-  cs <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, 2 : ncol(out$X)])), coverage = 0.9)
+  if(nrow(a) == 0) {{
+    a <- data.frame(NA)
+  }}
+  tb0 <- tableGrob(a, widths=unit(rep(1/ncol(a), ncol(a)),"npc")-unit(1,"line"), theme = mytheme)
+  cs <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, -ncol(out$X)])), coverage = 0.9)
   if(nrow(cs$purity) > 0) {{
     cs$purity$tissue <- tissue
     df.purity <- rbind(df.purity, cs$purity)
@@ -102,9 +111,6 @@ for(rds in rdss) {{
   highlight.snp <- highlight.snp.df[highlight.snp.df$ensembl_gene_id == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2] & highlight.snp.df$tissue == tissue, ]
   leading.snp <- as.numeric(str_match(highlight.snp$leading_eqtl[1], '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
   candidate.snp <- as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
-  highlight.snp <- highlight.snp.df[highlight.snp.df$ensembl_gene_id == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2] & highlight.snp.df$tissue == tissue, ]
-  leading.snp <- as.numeric(str_match(highlight.snp$leading_eqtl[1], '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
-  candidate.snp <- unique(as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2]))
   df$type <- 'No'
   df$type[df$coordinate %in% candidate.snp] <- 'Motif SNP'
   df$type[df$coordinate %in% leading.snp] <- 'Leading SNP'
@@ -113,27 +119,35 @@ for(rds in rdss) {{
   p <- p + ggtitle(paste0(tissue, '\n PIP (red line: leadingSNP; blue line: candidateSNP)'))
   p <- p + geom_vline(xintercept = candidate.snp, color = 'blue')
   p <- p + geom_vline(xintercept = leading.snp, color = 'red', linetype = 2) + theme(legend.position = "bottom")
-  hitted <- rbind(hitted, highlight.snp[candidate.snp %in% coordinate[unlist(cs$cs)], ])
-  e <- plot_grid(plotlist = list(p, tb0), ncol = 1, rel_heights = rep(c(3/4, 1/4), length(plist)/2))
+  highlight.snp$pip <- pip[match(as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2]), coordinate)]
+  hitted.sub <- highlight.snp[candidate.snp %in% coordinate[unlist(cs$cs)], ]
+  hitted <- rbind(hitted, hitted.sub)
+  e <- plot_grid(plotlist = list(p, tb0), ncol = 1, rel_heights = c(3/4, 1/4))
   cat('##', tissue, '\n', '\n')
-  subchunkify(e, fig_asp = .7)
+  subchunkify(e, fig_asp = .8)
   cat('\n', '\n')
+  if(nrow(hitted.sub) != 0) {{
+    hitted.sub$motif_logo <- paste0('![](', motif_prefix, '/', hitted.sub$dbname, '__', hitted.sub$motif_id, '.png', ')')
+    hitted.sub <- hitted.sub[, c(cols, 'motif_logo')]
+    print(hitted.sub %>% kable(format = "html", col.names = colnames(hitted.sub)) %>%
+    kable_styling() %>%
+    kableExtra::scroll_box(width = "100%", height = "500px"))
+  }}
 }}
 ```
 
 # Summary of SNPs in CS
 
 ```{{r, results='asis'}}
-cols <- c('gene_name', 'motif_snp', 'r', 'motif_id', 'motif_name', 'motif_qval', 'motif_snp.pos', 'motif.length', 'strand', 'tissue')
 if(nrow(hitted) != 0) {{
-  hitted$motif_logo <- paste0('![](', motif_prefix, '/', hitted$motif_from, '__', hitted$motif_id, '.png', ')')
+  hitted$motif_logo <- paste0('![](', motif_prefix, '/', hitted$dbname, '__', hitted$motif_id, '.png', ')')
   hitted <- hitted[, c(cols, 'motif_logo')]
   hitted %>% kable(format = "html", col.names = colnames(hitted)) %>%
   kable_styling() %>%
   kableExtra::scroll_box(width = "100%", height = "500px")
 }}
 ```
-'''.format(gene = wildcards.gene, motif_summary = input.summary, mash_folder = input.mash_plot_dir, motif_folder = input.motif_logo_folder, rds_str = ','.join（input.rdss)
+'''.format(gene = wildcards.gene, motif_summary = input[0], mash_folder = input[1], motif_folder = input[2], rds_str = ','.join(input[3:]))
         o = open(output[0], 'w')
         o.write(rmd)
         o.close()
@@ -147,3 +161,7 @@ rule gen_report_html:
         '''
         Rscript -e "rmarkdown::render('{input[0]}')"
         '''
+
+rule all_spotlight:
+    input:
+        [ 'output/{task_name}/{gene}.html'.format(task_name = config['task-name'], gene = i) for i in config['gene'].split(',') ]
