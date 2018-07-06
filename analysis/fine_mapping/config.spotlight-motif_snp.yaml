@@ -1,0 +1,11 @@
+task-name: 'heart_motif_snp'
+fine-mapping:
+  dir-name: 'fine-map__susie'
+  data:
+    set1:
+      dir: 'output/heart_motif_snp/'
+    set2:
+      dir: 'output/heart_motif_snp-more_tissue/'
+motif-snp:
+  dir: '../motif_analysis/output/first_try/report/'
+gene: 'ENSG00000185615.11,ENSG00000105738.6,ENSG00000139880.15'

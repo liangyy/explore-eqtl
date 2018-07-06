@@ -1,0 +1,105 @@
+---
+title: "Spotligt of {gene}"
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+    theme: cosmo
+    highlight: textmate
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
+library(pander)
+library(ggplot2)
+library(kableExtra)
+library(gridExtra)
+library(dplyr)
+library(cowplot)
+source('../../../scripts/mylib.R')
+```
+
+# Setup
+
+```{r, results='asis'}
+highlight.snp.df <- read.table('../../motif_analysis/output/first_try/report/summary_table.txt', header = T)
+rdss <- strsplit('../output/heart_motif_snp/Heart_Atrial_Appendage/fine-map__susie/ENSG00000103091.10.rds,../output/heart_motif_snp/Heart_Left_Ventricle/fine-map__susie/ENSG00000103091.10.rds', ',')[[1]]
+gene <- 'ENSG00000103091.10'
+idx <- highlight.snp.df$idx[1]
+mash <- paste0('../../motif_analysis/output/first_try/report/mash_plot', '/', 'mash__idx', idx, '.png')
+motif_prefix <- '../../motif_analysis/output/first_try/report/motif_logo'
+cat('\n', paste0('![](', mash, ')'), '\n', '\n')
+```
+
+# Results
+
+```{r, results='asis'}
+# plist <- list()
+df.purity <- data.frame()
+hitted <- data.frame()
+mytheme <- gridExtra::ttheme_default(
+    core = list(fg_params=list(cex = .7)),
+    colhead = list(fg_params=list(cex = .7)),
+    rowhead = list(fg_params=list(cex = .7)))
+for(rds in rdss) {
+  tissue <- basename(dirname(dirname(rds)))
+  out <- readRDS(rds)
+  cs0 <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, 2 : ncol(out$X)])), min_abs_corr = 0)
+  if(nrow(cs0$purity) > 0) {
+    cs0$purity <- round(cs0$purity, digits = 2)
+    cs0$purity$tissue <- tissue
+  }
+  a <- cs0$purity
+  tb0 <- tableGrob(cs0$purity, widths=unit(rep(1/ncol(a), ncol(a)),"npc")-unit(1,"line"), theme = mytheme)
+  cs <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, 2 : ncol(out$X)])), coverage = 0.9)
+  if(nrow(cs$purity) > 0) {
+    cs$purity$tissue <- tissue
+    df.purity <- rbind(df.purity, cs$purity)
+  }
+  pip <- susieR::susie_get_PIP(out$fitted, cs$cs_index)
+  coordinate <- as.numeric(str_match(out$X$SNP_ID, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
+  df <- data.frame(coordinate = coordinate, pip = pip)
+  df$cs <- -1
+  if(length(cs$cs_index) != 0) {{
+    for(i in 1 : length(cs$cs_index)) {{
+      df$cs[cs$cs[[i]]] <- cs$cs_index[i]
+    }}
+  }}
+  highlight.snp <- highlight.snp.df[highlight.snp.df$ensembl_gene_id == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2] & highlight.snp.df$tissue == tissue, ]
+  leading.snp <- as.numeric(str_match(highlight.snp$leading_eqtl[1], '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
+  candidate.snp <- as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
+  highlight.snp <- highlight.snp.df[highlight.snp.df$ensembl_gene_id == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2] & highlight.snp.df$tissue == tissue, ]
+  leading.snp <- as.numeric(str_match(highlight.snp$leading_eqtl[1], '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
+  candidate.snp <- unique(as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2]))
+  df$type <- 'No'
+  df$type[df$coordinate %in% candidate.snp] <- 'Motif SNP'
+  df$type[df$coordinate %in% leading.snp] <- 'Leading SNP'
+  df$cs <- factor(df$cs)
+  p <- ggplot(df) + geom_point(aes(x = coordinate, y = pip, color = cs, shape = type), size = 3)
+  p <- p + ggtitle(paste0(tissue, '\n PIP (red line: leadingSNP; blue line: candidateSNP)'))
+  p <- p + geom_vline(xintercept = candidate.snp, color = 'blue')
+  p <- p + geom_vline(xintercept = leading.snp, color = 'red', linetype = 2) + theme(legend.position = "bottom")
+  # plist[[length(plist) + 1]] <- p
+  # plist[[length(plist) + 1]] <- tb0
+  hitted <- rbind(hitted, highlight.snp[candidate.snp %in% coordinate[unlist(cs$cs)], ])
+  e <- plot_grid(plotlist = list(p, tb0), ncol = 1, rel_heights = rep(c(3/4, 1/4), length(plist)/2))
+  cat('##', tissue, '\n', '\n')
+  subchunkify(e, fig_asp = .7)
+  cat('\n', '\n')
+}
+```
+
+# Summary of SNPs in CS
+
+```{r, results='asis'}
+cols <- c('gene_name', 'motif_snp', 'r', 'motif_id', 'motif_name', 'motif_qval', 'motif_snp.pos', 'motif.length', 'strand', 'tissue')
+if(nrow(hitted) != 0) {{
+  hitted$motif_logo <- paste0('![](', motif_prefix, '/', hitted$motif_from, '__', hitted$motif_id, '.png', ')')
+  hitted <- hitted[, c(cols, 'motif_logo')]
+  hitted %>% kable(format = "html", col.names = colnames(hitted)) %>%
+  kable_styling() %>%
+  kableExtra::scroll_box(width = "100%", height = "500px")
+}}
+```
