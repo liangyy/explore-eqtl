@@ -48,7 +48,7 @@ for(f in opt$inputs) {
   info2 <- strsplit(filename, '.', fixed = T)[[1]]
   from_info <- info2[2]
   db_str <- info2[3]
-  if(from_info == 'from_enrichment') {
+  if(from_info == 'from_enrichment' | from_info == 'from_all') {
     db <- db_str
   } else if(from_info == 'from_predefined_list') {
     db <- strsplit(db_str, '__', fixed = T)[[1]][2]

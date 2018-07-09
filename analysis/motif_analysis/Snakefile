@@ -96,6 +96,17 @@ if 'motif-list' in list(config.keys()):
     # rule all_fimo_motif_list:
     #     input:
     #         'output/{task_name}/fimo_out/from_predefined_list/{list_name}__{motifdb_name}/fimo.tsv'.format(task_name = config['task-name'], motifdb_name = config['motif-list']['database'], list_name = config['motif-list']['name'])
+if 'motif-all' in list(config.keys()) and config['motif-all'] is True:
+    rule fimo_all:
+        input:
+            'output/{task_name}/positive.fa'
+        output:
+            'output/{task_name}/fimo_out/from_all/{motifdb_name}/fimo.tsv'
+        params:
+            motif_database = lambda wildcards: config['motif-database'][wildcards.motifdb_name],
+            out_dir = 'output/{task_name}/fimo_out/from_all/{motifdb_name}/'
+        shell:
+            'fimo --oc {params.out_dir} --verbosity 1 {motif_cmd} {params.motif_database} {input[0]}'
 
 rule extract_snp_prepare_snp_bed:
     input:
@@ -158,6 +169,8 @@ def get_all_ld(config):
     out = []
     geno_names = list(config['genotype'].keys())
     motif_froms = ['from_enrichment', 'from_predefined_list']
+    if 'motif-all' in list(config.keys()):
+        motif_froms.append('from_all')
     motif_hits = list(config['motif-database'].keys())
     motif_hits2 = []
     if 'motif-list' in list(config.keys()):
@@ -167,7 +180,7 @@ def get_all_ld(config):
             motif_hits2.append('{list_name}__{motifdb_name}'.format(list_name = i, motifdb_name = db))
     for g in geno_names:
         for m in motif_froms:
-            if m == 'from_enrichment':
+            if m == 'from_enrichment' or m == 'from_all':
                 for h in motif_hits:
                     out.append(pattern.format(geno_name = g, motif_from = m, motif_hit = h))
             if m == 'from_predefined_list':
@@ -180,6 +193,8 @@ def get_all_fimo(config):
     out = []
     geno_names = list(config['genotype'].keys())
     motif_froms = ['from_enrichment', 'from_predefined_list']
+    if 'motif-all' in list(config.keys()):
+        motif_froms.append('from_all')
     motif_hits = list(config['motif-database'].keys())
     motif_hits2 = []
     if 'motif-list' in list(config.keys()):
@@ -189,7 +204,7 @@ def get_all_fimo(config):
             motif_hits2.append('{list_name}__{motifdb_name}'.format(list_name = i, motifdb_name = db))
     for g in geno_names:
         for m in motif_froms:
-            if m == 'from_enrichment':
+            if m == 'from_enrichment' or m == 'from_all':
                 for h in motif_hits:
                     out.append(pattern.format(geno_name = g, motif_from = m, motif_hit = h))
             if m == 'from_predefined_list':
@@ -291,6 +306,25 @@ if(nrow(df.sub) != 0) {{
 
 ```{{r, results='asis'}}
 df.sub <- df[df$motif_from == 'from_predefined_list', ]
+if(nrow(df.sub != 0)) {{
+  df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.sub$motif_id, '.png)')
+  df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')
+  df.show <- df.sub
+  df.show <- df.show[, - which(colnames(df.show) %in% c('idx', 'eqtl_name', 'motif_from'))]
+  df.show <- df.show[order(df.show$r ^ 2, decreasing = T), ]
+  df.show$strand <- as.character(df.show$strand)
+  df.show$strand[df.show$strand == '-'] <- 'negative'
+  df.show$strand[df.show$strand == '+'] <- 'positive'
+  row.names(df.show) <- NULL
+  df.show %>% kable(format = "html", col.names = colnames(df.show)) %>%
+    kable_styling() %>%
+    kableExtra::scroll_box(width = "100%", height = "500px")
+}}
+
+# Motifs obtained from all motifs in database
+
+```{{r, results='asis'}}
+df.sub <- df[df$motif_from == 'from_all', ]
 if(nrow(df.sub != 0)) {{
   df.sub$motif_logo <- paste0('![](', motif_logo_prefix, df.sub$dbname, '__', df.sub$motif_id, '.png)')
   df.sub$mash_plot <- paste0('![](', mash_plot_prefix, df.sub$idx, '.png)')

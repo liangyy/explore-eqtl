@@ -14,6 +14,7 @@ motif-list:  # http://www.pnas.org/content/108/14/5632
   pnas-jaspar:
     path: 'motif_list/motif_list-jaspar.skin.txt'
     database: 'jaspar'
+motif-all: True
 genotype:
   Skin_Not_Sum_Exposed_Suprapubic: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Skin_Not_Sun_Exposed_Suprapubic_Analysis.snps.txt.gz'
   Skin_Sun_Exposed_Lower_leg: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Skin_Sun_Exposed_Lower_leg_Analysis.snps.txt.gz'
