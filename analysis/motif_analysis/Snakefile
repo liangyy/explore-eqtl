@@ -256,7 +256,7 @@ library(knitr)
 
 ```{{r}}
 eqtl <- read.table('../../../{eqtl_name}', header = F)
-df <- read.table('../../../{df}', header = T)
+df <- read.table('../../../{df}', header = T, sep = '\\t')
 df$eqtl_name <- eqtl$V1[df$idx]
 df$rownum <- 1 : nrow(df)
 eqtl_split <- str_match(as.character(df$eqtl_name), '([A-Za-z0-9]+).[0-9]+_([A-Za-z0-9_]+)')
@@ -360,7 +360,7 @@ panderOptions('table.split.table', Inf)
 # Load data
 
 ```{{r}}
-df <- read.table('../../../{df}', header = T)
+df <- read.table('../../../{df}', header = T, sep = '\\t')
 df$rownum <- 1 : nrow(df)
 
 df.sub <- df[df$motif_qval < 0.05 & abs(df$r) > 0.5, ]

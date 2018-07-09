@@ -3,13 +3,13 @@ gene-list: 'gene_list/skin_motif_snp.txt'
 gene-snp-map: '/project/mstephens/data/internal_supp/gtex-v6-sumstat-hdf5/MatrixEQTLSumStats.gene-snp-pairs.gz'
 tissue:
   Skin_Not_Sum_Exposed_Suprapubic:
-    genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Skin_Not_Sum_Exposed_Suprapubic_Analysis.snps.txt.gz'
-    gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Skin_Not_Sum_Exposed_Suprapubic_Analysis.expr.txt.gz'
-    covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Skin_Not_Sum_Exposed_Suprapubic_Analysis.covariates.txt.gz'
+    genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Skin_Not_Sun_Exposed_Suprapubic_Analysis.snps.txt.gz'
+    gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Skin_Not_Sun_Exposed_Suprapubic_Analysis.expr.txt.gz'
+    covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Skin_Not_Sun_Exposed_Suprapubic_Analysis.covariates.txt.gz'
   Skin_Sun_Exposed_Lower_leg:
     genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Skin_Sun_Exposed_Lower_leg_Analysis.snps.txt.gz'
     gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Skin_Sun_Exposed_Lower_leg_Analysis.expr.txt.gz'
     covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Skin_Sun_Exposed_Lower_leg_Analysis.covariates.txt.gz'
-  fine-mapping-wrapper:
+fine-mapping-wrapper:
   susie: 'scripts/susie_fine_mapping.R'
 highlight-snp: '../motif_analysis/output/skin_second_try/report/summary_table.txt'

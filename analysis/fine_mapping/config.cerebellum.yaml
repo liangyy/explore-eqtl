@@ -10,6 +10,6 @@ tissue:
     genotype: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Brain_Cerebellum_Analysis.snps.txt.gz'
     gene-expression: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_geneLevelNormalizedExpressionMatrices/Brain_Cerebellum_Analysis.expr.txt.gz'
     covariate: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_covariates/Brain_Cerebellum_Analysis.covariates.txt.gz'
-  fine-mapping-wrapper:
+fine-mapping-wrapper:
   susie: 'scripts/susie_fine_mapping.R'
 highlight-snp: '../motif_analysis/output/cerebellum_second_try/report/summary_table.txt'
