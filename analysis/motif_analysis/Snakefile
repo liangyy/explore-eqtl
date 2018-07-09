@@ -106,7 +106,7 @@ if 'motif-all' in list(config.keys()) and config['motif-all'] is True:
             motif_database = lambda wildcards: config['motif-database'][wildcards.motifdb_name],
             out_dir = 'output/{task_name}/fimo_out/from_all/{motifdb_name}/'
         shell:
-            'fimo --oc {params.out_dir} --verbosity 1 {motif_cmd} {params.motif_database} {input[0]}'
+            'fimo --oc {params.out_dir} --verbosity 1 {params.motif_database} {input[0]}'
 
 rule extract_snp_prepare_snp_bed:
     input:
