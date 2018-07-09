@@ -1,5 +1,5 @@
 library(mashr)
-source('skin_second_try.R')
+source('cerebellum_second_try.R')
 
 ## get gtex color
 gtex.color <- read.table(url('https://github.com/stephenslab/gtexresults/raw/master/data/GTExColors.txt'), sep = '\t', comment.char = '')

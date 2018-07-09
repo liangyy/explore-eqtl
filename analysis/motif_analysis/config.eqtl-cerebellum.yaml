@@ -1,0 +1,19 @@
+task-name: 'cerebellum_second_try'
+flash: '../../output/gtex_flash.rds'
+mash: '../../output/gtex_mash.rds'
+eqtl-meta: '../../output/strong_eqtl_annotated.txt.gz'
+eqtl-name: '../../output/strong_eqtl_names.txt'
+motif-database:
+  human: '../../data/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme'
+  jaspar: '../../data/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme'
+window_size: 1000
+motif-list:  # http://www.pnas.org/content/108/14/5632
+  pnas-human:
+    path: 'motif_list/motif_list-human.skin.txt'
+    database: 'human'
+  pnas-jaspar:
+    path: 'motif_list/motif_list-jaspar.skin.txt'
+    database: 'jaspar'
+genotype:
+  Brain_Cerebellar_Hemisphere: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Brain_Cerebellar_Hemisphere_Analysis.snps.txt.gz'
+  Brain_Cerebellum: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Brain_Cerebellum_Analysis.snps.txt.gz'
