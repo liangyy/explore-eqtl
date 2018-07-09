@@ -11,7 +11,7 @@
 
 
 
-<title>Preliminary analysis of flash and mash result (factor 2)</title>
+<title>Preliminary analysis of flash and mash result (factor 11)</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -301,15 +301,16 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Preliminary analysis of flash and mash result (factor 2)</h1>
-<h4 class="date"><em>09 July, 2018</em></h4>
+<h1 class="title toc-ignore">Preliminary analysis of flash and mash result (factor 11)</h1>
+<h4 class="date"><em>08 July, 2018</em></h4>
 
 </div>
 
 
 <div id="set-up" class="section level1">
 <h1><span class="header-section-number">1</span> Set up</h1>
-<pre class="r"><code>library(ggplot2)
+<pre class="r"><code>source(&#39;../scripts/mylib.R&#39;)
+library(ggplot2)
 library(mashr)
 library(biomaRt)
 library(dplyr)
@@ -317,6 +318,7 @@ library(topGO)
 library(pander)
 library(rmeta)
 library(reshape2)
+library(GO.db)
 panderOptions(&#39;knitr.auto.asis&#39;, FALSE)
 panderOptions(&#39;table.split.table&#39;, Inf)</code></pre>
 </div>
@@ -331,17 +333,16 @@ gtex.color &lt;- gtex.color[c(1:6,9:18,21:23,26:30,32,33,35,36,38:53), 1:2]
 tissue.color &lt;- as.character(gtex.color[,2])
 ntissue &lt;- nrow(gtex.color)</code></pre>
 </div>
-<div id="factor-2" class="section level1">
-<h1><span class="header-section-number">3</span> Factor 2</h1>
-<p>See details of factor 2 at <a href="run_flashr.html">here</a></p>
+<div id="factor-11" class="section level1">
+<h1><span class="header-section-number">3</span> Factor 11</h1>
+<p>See details of factor 11 at <a href="run_flashr.html">here</a></p>
 <pre class="r"><code>l &lt;- flash$EL
 dim(l)</code></pre>
 <pre><code>## [1] 16069    23</code></pre>
-<pre class="r"><code>l.two &lt;- l[, 2]
-l.five &lt;- l[, 5]
-top.tissue.idx &lt;- order(abs(flash$EF[, 2]), decreasing = T)[1 : 3]
+<pre class="r"><code>l.two &lt;- l[, 11]
+top.tissue.idx &lt;- order(abs(flash$EF[, 11]), decreasing = T)[1 : 3]
 hist(l.two)</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
 <pre class="r"><code>top.ten.idx &lt;- order(l.two, decreasing = T)[1:10]
 bottom.ten.idx &lt;- order(l.two, decreasing = F)[1:10]</code></pre>
 <div id="ten-eqtl-with-highest-loading" class="section level2">
@@ -350,7 +351,7 @@ bottom.ten.idx &lt;- order(l.two, decreasing = F)[1:10]</code></pre>
 for(i in 1 : 10) {
   mash_plot_meta(mash$posterior, top.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
 }</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-3-1.png" width="768" /></p>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-34-1.png" width="768" /></p>
 </div>
 <div id="ten-eqtl-with-lowest-loading" class="section level2">
 <h2><span class="header-section-number">3.2</span> Ten eQTL with lowest loading</h2>
@@ -358,39 +359,13 @@ for(i in 1 : 10) {
 for(i in 1 : 10) {
   mash_plot_meta(mash$posterior, bottom.ten.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
 }</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-4-1.png" width="768" /></p>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-35-1.png" width="768" /></p>
 </div>
 </div>
 <div id="gene-ontology-enrichment-analysis" class="section level1">
 <h1><span class="header-section-number">4</span> Gene ontology enrichment analysis</h1>
 <p>EQTLs with top and bottom loadings (50 respectively) are used as positive set and 500 eQTLs with most modest loading as background set.</p>
-<pre class="r"><code>annotateEQTL &lt;- function(eqtl, idx, ensembl) {
-  ensg &lt;- data.frame(t(sapply(eqtl[idx], function(str) {
-    temp &lt;- strsplit(as.character(str), &#39;_&#39;)[[1]]
-    x &lt;- temp[1]
-    chr &lt;- temp[2]
-    s &lt;- temp[3]
-    return(c(strsplit(x, &#39;.&#39;, fixed = T)[[1]][1], chr, s))
-  })))
-  colnames(ensg) &lt;- c(&#39;ensembl_gene_id&#39;, &#39;eqtl_chr&#39;, &#39;eqtl_start&#39;)
-  ensg$idx &lt;- idx
-  ensg$ensembl_gene_id &lt;- as.character(ensg$ensembl_gene_id)
-  re &lt;- getBM(
-    attributes = c(&#39;ensembl_gene_id&#39;, &#39;hgnc_symbol&#39;, &#39;chromosome_name&#39;, &#39;start_position&#39;, &#39;end_position&#39;, &#39;strand&#39;, &#39;go_id&#39;, &#39;name_1006&#39;, &#39;uniprot_genename&#39;, &#39;uniprot_swissprot_accession&#39;, &#39;transcript_start&#39;, &#39;transcript_end&#39;), 
-    filters = &#39;ensembl_gene_id&#39;,
-    values = ensg[, 1],
-    mart = ensembl)
-  re &lt;- inner_join(re, ensg, by = &#39;ensembl_gene_id&#39;)
-  return(re)
-}
-genGene2GO &lt;- function(g2g, re) {
-  gene &lt;- unique(re$ensembl_gene_id)
-  for(x in gene) {
-    g2g[[x]] &lt;- re[re$ensembl_gene_id == x, &#39;go_id&#39;]
-  }
-  return(g2g)
-}
-ensembl &lt;- useMart(biomart=&quot;ENSEMBL_MART_ENSEMBL&quot;, host=&quot;feb2014.archive.ensembl.org&quot;, path=&quot;/biomart/martservice&quot;, dataset=&quot;hsapiens_gene_ensembl&quot;)
+<pre class="r"><code>ensembl &lt;- useMart(biomart=&quot;ENSEMBL_MART_ENSEMBL&quot;, host=&quot;feb2014.archive.ensembl.org&quot;, path=&quot;/biomart/martservice&quot;, dataset=&quot;hsapiens_gene_ensembl&quot;)
 positive.idx &lt;- c(order(l.two, decreasing = T)[1:50], order(l.two, decreasing = F)[1:50])
 control.idx &lt;- order(abs(l.two), decreasing = F)[1:500]
 positive.re &lt;- annotateEQTL(eqtl, positive.idx, ensembl)
@@ -416,17 +391,17 @@ for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
 <h2><span class="header-section-number">4.1</span> Biological process</h2>
 <pre><code>## 
 ## Building most specific GOs .....</code></pre>
-<pre><code>##  ( 1602 GO terms found. )</code></pre>
+<pre><code>##  ( 1565 GO terms found. )</code></pre>
 <pre><code>## 
 ## Build GO DAG topology ..........</code></pre>
-<pre><code>##  ( 4242 GO terms and 9650 relations. )</code></pre>
+<pre><code>##  ( 4059 GO terms and 9158 relations. )</code></pre>
 <pre><code>## 
 ## Annotating nodes ...............</code></pre>
-<pre><code>##  ( 361 genes annotated to the GO terms. )</code></pre>
+<pre><code>##  ( 364 genes annotated to the GO terms. )</code></pre>
 <pre><code>## 
 ##           -- Classic Algorithm -- 
 ## 
-##       the algorithm is scoring 1777 nontrivial nodes
+##       the algorithm is scoring 1818 nontrivial nodes
 ##       parameters: 
 ##           test statistic: fisher</code></pre>
 <table>
@@ -451,84 +426,84 @@ for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><a href="GO:0007200" class="uri">GO:0007200</a></td>
-<td align="center">phospholipase C-activating G-protein cou…</td>
-<td align="center">3</td>
-<td align="center">3</td>
-<td align="center">0.52</td>
-<td align="center">0.0051</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0030261" class="uri">GO:0030261</a></td>
-<td align="center">chromosome condensation</td>
-<td align="center">3</td>
-<td align="center">3</td>
-<td align="center">0.52</td>
-<td align="center">0.0051</td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="GO:0000226" class="uri">GO:0000226</a></td>
-<td align="center">microtubule cytoskeleton organization</td>
-<td align="center">10</td>
-<td align="center">5</td>
-<td align="center">1.75</td>
-<td align="center">0.0172</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0000819" class="uri">GO:0000819</a></td>
-<td align="center">sister chromatid segregation</td>
-<td align="center">4</td>
-<td align="center">3</td>
-<td align="center">0.7</td>
-<td align="center">0.0179</td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="GO:0007126" class="uri">GO:0007126</a></td>
-<td align="center">meiotic nuclear division</td>
-<td align="center">4</td>
-<td align="center">3</td>
-<td align="center">0.7</td>
-<td align="center">0.0179</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0007187" class="uri">GO:0007187</a></td>
-<td align="center">G-protein coupled receptor signaling pat…</td>
-<td align="center">4</td>
-<td align="center">3</td>
-<td align="center">0.7</td>
-<td align="center">0.0179</td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="GO:0051321" class="uri">GO:0051321</a></td>
-<td align="center">meiotic cell cycle</td>
-<td align="center">4</td>
-<td align="center">3</td>
-<td align="center">0.7</td>
-<td align="center">0.0179</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0098813" class="uri">GO:0098813</a></td>
-<td align="center">nuclear chromosome segregation</td>
-<td align="center">4</td>
-<td align="center">3</td>
-<td align="center">0.7</td>
-<td align="center">0.0179</td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="GO:1903046" class="uri">GO:1903046</a></td>
-<td align="center">meiotic cell cycle process</td>
-<td align="center">4</td>
-<td align="center">3</td>
-<td align="center">0.7</td>
-<td align="center">0.0179</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0051640" class="uri">GO:0051640</a></td>
-<td align="center">organelle localization</td>
+<td align="center"><a href="GO:0009101" class="uri">GO:0009101</a></td>
+<td align="center">glycoprotein biosynthetic process</td>
 <td align="center">7</td>
+<td align="center">5</td>
+<td align="center">1.4</td>
+<td align="center">0.0043</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0006816" class="uri">GO:0006816</a></td>
+<td align="center">calcium ion transport</td>
+<td align="center">3</td>
+<td align="center">3</td>
+<td align="center">0.6</td>
+<td align="center">0.0078</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0060191" class="uri">GO:0060191</a></td>
+<td align="center">regulation of lipase activity</td>
+<td align="center">3</td>
+<td align="center">3</td>
+<td align="center">0.6</td>
+<td align="center">0.0078</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0060193" class="uri">GO:0060193</a></td>
+<td align="center">positive regulation of lipase activity</td>
+<td align="center">3</td>
+<td align="center">3</td>
+<td align="center">0.6</td>
+<td align="center">0.0078</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0009100" class="uri">GO:0009100</a></td>
+<td align="center">glycoprotein metabolic process</td>
+<td align="center">8</td>
+<td align="center">5</td>
+<td align="center">1.6</td>
+<td align="center">0.0097</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0030029" class="uri">GO:0030029</a></td>
+<td align="center">actin filament-based process</td>
+<td align="center">25</td>
+<td align="center">10</td>
+<td align="center">5.01</td>
+<td align="center">0.0143</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0031099" class="uri">GO:0031099</a></td>
+<td align="center">regeneration</td>
+<td align="center">6</td>
 <td align="center">4</td>
-<td align="center">1.22</td>
-<td align="center">0.0196</td>
+<td align="center">1.2</td>
+<td align="center">0.0163</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0009266" class="uri">GO:0009266</a></td>
+<td align="center">response to temperature stimulus</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.8</td>
+<td align="center">0.0267</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0043269" class="uri">GO:0043269</a></td>
+<td align="center">regulation of ion transport</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.8</td>
+<td align="center">0.0267</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0051336" class="uri">GO:0051336</a></td>
+<td align="center">regulation of hydrolase activity</td>
+<td align="center">20</td>
+<td align="center">8</td>
+<td align="center">4.01</td>
+<td align="center">0.0287</td>
 </tr>
 </tbody>
 </table>
@@ -537,17 +512,17 @@ for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
 <h2><span class="header-section-number">4.2</span> Molecular function</h2>
 <pre><code>## 
 ## Building most specific GOs .....</code></pre>
-<pre><code>##  ( 468 GO terms found. )</code></pre>
+<pre><code>##  ( 497 GO terms found. )</code></pre>
 <pre><code>## 
 ## Build GO DAG topology ..........</code></pre>
-<pre><code>##  ( 758 GO terms and 952 relations. )</code></pre>
+<pre><code>##  ( 753 GO terms and 915 relations. )</code></pre>
 <pre><code>## 
 ## Annotating nodes ...............</code></pre>
-<pre><code>##  ( 367 genes annotated to the GO terms. )</code></pre>
+<pre><code>##  ( 383 genes annotated to the GO terms. )</code></pre>
 <pre><code>## 
 ##           -- Classic Algorithm -- 
 ## 
-##       the algorithm is scoring 238 nontrivial nodes
+##       the algorithm is scoring 306 nontrivial nodes
 ##       parameters: 
 ##           test statistic: fisher</code></pre>
 <table>
@@ -572,84 +547,84 @@ for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><a href="GO:0001664" class="uri">GO:0001664</a></td>
-<td align="center">G-protein coupled receptor binding</td>
-<td align="center">3</td>
-<td align="center">3</td>
-<td align="center">0.5</td>
-<td align="center">0.0044</td>
+<td align="center"><a href="GO:0003779" class="uri">GO:0003779</a></td>
+<td align="center">actin binding</td>
+<td align="center">13</td>
+<td align="center">7</td>
+<td align="center">2.65</td>
+<td align="center">0.0068</td>
 </tr>
 <tr class="even">
-<td align="center"><a href="GO:0008083" class="uri">GO:0008083</a></td>
-<td align="center">growth factor activity</td>
-<td align="center">2</td>
-<td align="center">2</td>
-<td align="center">0.33</td>
-<td align="center">0.0272</td>
+<td align="center"><a href="GO:0008092" class="uri">GO:0008092</a></td>
+<td align="center">cytoskeletal protein binding</td>
+<td align="center">21</td>
+<td align="center">9</td>
+<td align="center">4.28</td>
+<td align="center">0.0136</td>
 </tr>
 <tr class="odd">
-<td align="center"><a href="GO:0016209" class="uri">GO:0016209</a></td>
-<td align="center">antioxidant activity</td>
-<td align="center">2</td>
-<td align="center">2</td>
-<td align="center">0.33</td>
-<td align="center">0.0272</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0016836" class="uri">GO:0016836</a></td>
-<td align="center">hydro-lyase activity</td>
-<td align="center">2</td>
-<td align="center">2</td>
-<td align="center">0.33</td>
-<td align="center">0.0272</td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="GO:0004896" class="uri">GO:0004896</a></td>
-<td align="center">cytokine receptor activity</td>
-<td align="center">3</td>
-<td align="center">2</td>
-<td align="center">0.5</td>
-<td align="center">0.0729</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0005200" class="uri">GO:0005200</a></td>
-<td align="center">structural constituent of cytoskeleton</td>
-<td align="center">3</td>
-<td align="center">2</td>
-<td align="center">0.5</td>
-<td align="center">0.0729</td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="GO:0008375" class="uri">GO:0008375</a></td>
-<td align="center">acetylglucosaminyltransferase activity</td>
-<td align="center">3</td>
-<td align="center">2</td>
-<td align="center">0.5</td>
-<td align="center">0.0729</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0016829" class="uri">GO:0016829</a></td>
-<td align="center">lyase activity</td>
-<td align="center">3</td>
-<td align="center">2</td>
-<td align="center">0.5</td>
-<td align="center">0.0729</td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="GO:0016835" class="uri">GO:0016835</a></td>
-<td align="center">carbon-oxygen lyase activity</td>
-<td align="center">3</td>
-<td align="center">2</td>
-<td align="center">0.5</td>
-<td align="center">0.0729</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0008234" class="uri">GO:0008234</a></td>
-<td align="center">cysteine-type peptidase activity</td>
+<td align="center"><a href="GO:0008168" class="uri">GO:0008168</a></td>
+<td align="center">methyltransferase activity</td>
+<td align="center">6</td>
 <td align="center">4</td>
+<td align="center">1.22</td>
+<td align="center">0.0173</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0016741" class="uri">GO:0016741</a></td>
+<td align="center">transferase activity, transferring one-c…</td>
+<td align="center">6</td>
+<td align="center">4</td>
+<td align="center">1.22</td>
+<td align="center">0.0173</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0005509" class="uri">GO:0005509</a></td>
+<td align="center">calcium ion binding</td>
+<td align="center">9</td>
+<td align="center">5</td>
+<td align="center">1.83</td>
+<td align="center">0.0198</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0008013" class="uri">GO:0008013</a></td>
+<td align="center">beta-catenin binding</td>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">0.81</td>
+<td align="center">0.0279</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0048037" class="uri">GO:0048037</a></td>
+<td align="center">cofactor binding</td>
+<td align="center">7</td>
+<td align="center">4</td>
+<td align="center">1.43</td>
+<td align="center">0.0341</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0033613" class="uri">GO:0033613</a></td>
+<td align="center">activating transcription factor binding</td>
 <td align="center">2</td>
-<td align="center">0.66</td>
-<td align="center">0.1304</td>
+<td align="center">2</td>
+<td align="center">0.41</td>
+<td align="center">0.0411</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0046703" class="uri">GO:0046703</a></td>
+<td align="center">natural killer cell lectin-like receptor…</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.41</td>
+<td align="center">0.0411</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0048306" class="uri">GO:0048306</a></td>
+<td align="center">calcium-dependent protein binding</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.41</td>
+<td align="center">0.0411</td>
 </tr>
 </tbody>
 </table>
@@ -658,24 +633,24 @@ for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
 <h2><span class="header-section-number">4.3</span> Cellular component</h2>
 <pre><code>## 
 ## Building most specific GOs .....</code></pre>
-<pre><code>##  ( 312 GO terms found. )</code></pre>
+<pre><code>##  ( 328 GO terms found. )</code></pre>
 <pre><code>## 
 ## Build GO DAG topology ..........</code></pre>
-<pre><code>##  ( 544 GO terms and 1091 relations. )</code></pre>
+<pre><code>##  ( 597 GO terms and 1191 relations. )</code></pre>
 <pre><code>## 
 ## Annotating nodes ...............</code></pre>
-<pre><code>##  ( 381 genes annotated to the GO terms. )</code></pre>
+<pre><code>##  ( 391 genes annotated to the GO terms. )</code></pre>
 <pre><code>## 
 ##           -- Classic Algorithm -- 
 ## 
-##       the algorithm is scoring 216 nontrivial nodes
+##       the algorithm is scoring 281 nontrivial nodes
 ##       parameters: 
 ##           test statistic: fisher</code></pre>
 <table>
 <caption>CC</caption>
 <colgroup>
 <col width="13%" />
-<col width="32%" />
+<col width="33%" />
 <col width="12%" />
 <col width="14%" />
 <col width="11%" />
@@ -693,104 +668,102 @@ for(i in c(&#39;BP&#39;, &#39;MF&#39;, &#39;CC&#39;)) {
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><a href="GO:0005740" class="uri">GO:0005740</a></td>
-<td align="center">mitochondrial envelope</td>
-<td align="center">15</td>
+<td align="center"><a href="GO:0044448" class="uri">GO:0044448</a></td>
+<td align="center">cell cortex part</td>
 <td align="center">6</td>
-<td align="center">2.6</td>
-<td align="center">0.030</td>
+<td align="center">4</td>
+<td align="center">1.2</td>
+<td align="center">0.016</td>
 </tr>
 <tr class="even">
-<td align="center"><a href="GO:0031966" class="uri">GO:0031966</a></td>
-<td align="center">mitochondrial membrane</td>
-<td align="center">15</td>
-<td align="center">6</td>
-<td align="center">2.6</td>
-<td align="center">0.030</td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="GO:0005576" class="uri">GO:0005576</a></td>
-<td align="center">extracellular region</td>
-<td align="center">38</td>
-<td align="center">11</td>
-<td align="center">6.58</td>
-<td align="center">0.044</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0044429" class="uri">GO:0044429</a></td>
-<td align="center">mitochondrial part</td>
-<td align="center">22</td>
-<td align="center">7</td>
-<td align="center">3.81</td>
-<td align="center">0.066</td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="GO:0015030" class="uri">GO:0015030</a></td>
-<td align="center">Cajal body</td>
+<td align="center"><a href="GO:0031225" class="uri">GO:0031225</a></td>
+<td align="center">anchored component of membrane</td>
+<td align="center">4</td>
 <td align="center">3</td>
+<td align="center">0.8</td>
+<td align="center">0.026</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0015629" class="uri">GO:0015629</a></td>
+<td align="center">actin cytoskeleton</td>
+<td align="center">10</td>
+<td align="center">5</td>
+<td align="center">1.99</td>
+<td align="center">0.031</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0046658" class="uri">GO:0046658</a></td>
+<td align="center">anchored component of plasma membrane</td>
 <td align="center">2</td>
-<td align="center">0.52</td>
-<td align="center">0.079</td>
-</tr>
-<tr class="even">
-<td align="center"><a href="GO:0031967" class="uri">GO:0031967</a></td>
-<td align="center">organelle envelope</td>
-<td align="center">23</td>
-<td align="center">7</td>
-<td align="center">3.98</td>
-<td align="center">0.082</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.039</td>
 </tr>
 <tr class="odd">
-<td align="center"><a href="GO:0031975" class="uri">GO:0031975</a></td>
-<td align="center">envelope</td>
-<td align="center">23</td>
-<td align="center">7</td>
-<td align="center">3.98</td>
-<td align="center">0.082</td>
+<td align="center"><a href="GO:0060187" class="uri">GO:0060187</a></td>
+<td align="center">cell pole</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0.4</td>
+<td align="center">0.039</td>
 </tr>
 <tr class="even">
-<td align="center"><a href="GO:0005741" class="uri">GO:0005741</a></td>
-<td align="center">mitochondrial outer membrane</td>
-<td align="center">7</td>
-<td align="center">3</td>
-<td align="center">1.21</td>
-<td align="center">0.103</td>
+<td align="center"><a href="GO:0016020" class="uri">GO:0016020</a></td>
+<td align="center">membrane</td>
+<td align="center">184</td>
+<td align="center">44</td>
+<td align="center">36.71</td>
+<td align="center">0.043</td>
 </tr>
 <tr class="odd">
-<td align="center"><a href="GO:0015630" class="uri">GO:0015630</a></td>
-<td align="center">microtubule cytoskeleton</td>
-<td align="center">25</td>
-<td align="center">7</td>
-<td align="center">4.33</td>
-<td align="center">0.120</td>
+<td align="center"><a href="GO:0005938" class="uri">GO:0005938</a></td>
+<td align="center">cell cortex</td>
+<td align="center">15</td>
+<td align="center">6</td>
+<td align="center">2.99</td>
+<td align="center">0.057</td>
 </tr>
 <tr class="even">
-<td align="center"><a href="GO:0005856" class="uri">GO:0005856</a></td>
-<td align="center">cytoskeleton</td>
-<td align="center">45</td>
-<td align="center">11</td>
-<td align="center">7.8</td>
-<td align="center">0.130</td>
+<td align="center"><a href="GO:0099568" class="uri">GO:0099568</a></td>
+<td align="center">cytoplasmic region</td>
+<td align="center">15</td>
+<td align="center">6</td>
+<td align="center">2.99</td>
+<td align="center">0.057</td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="GO:0048471" class="uri">GO:0048471</a></td>
+<td align="center">perinuclear region of cytoplasm</td>
+<td align="center">12</td>
+<td align="center">5</td>
+<td align="center">2.39</td>
+<td align="center">0.069</td>
+</tr>
+<tr class="even">
+<td align="center"><a href="GO:0044425" class="uri">GO:0044425</a></td>
+<td align="center">membrane part</td>
+<td align="center">131</td>
+<td align="center">32</td>
+<td align="center">26.13</td>
+<td align="center">0.076</td>
 </tr>
 </tbody>
 </table>
-<p>It turns out that these top genes are enriched in cation/ion transcportation process.</p>
 </div>
 </div>
 <div id="overview-of-selected-gene-sets" class="section level1">
 <h1><span class="header-section-number">5</span> Overview of selected gene sets</h1>
 <pre class="r"><code>df &lt;- data.frame(loading = l.two[c(positive.idx, control.idx)], label = c(rep(&#39;positive&#39;, length(positive.idx)), rep(&#39;control&#39;, length(control.idx))))
 ggplot(df) + geom_histogram(aes(x = loading, group = label, fill = label), binwidth = 1) + ggtitle(&#39;Histogram of loading&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-37-1.png" width="672" /></p>
 <div id="posterior-mean-comparison-across-top-three-tissues" class="section level2">
 <h2><span class="header-section-number">5.1</span> Posterior mean comparison across top three tissues</h2>
 <pre class="r"><code>df.load &lt;- mash$posterior$result$PosteriorMean[positive.idx, top.tissue.idx]
 pairs(df.load, main = &#39;Pairwise comparison of top three tissues in positive set&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-38-1.png" width="672" /></p>
 <pre class="r"><code>df.load &lt;- mash$posterior$result$PosteriorMean[control.idx, top.tissue.idx]
 pairs(df.load, main = &#39;Pairwise comparison of top three tissues in control set&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-7-2.png" width="672" /></p>
-<p>So, it seems that the ones with strong loading on factor 2 are driven by tissue specificity but not strong correlation between these top tissues, which is the same as factor 5.</p>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-38-2.png" width="672" /></p>
 </div>
 <div id="posterior-effect-size-of-control-eqtls" class="section level2">
 <h2><span class="header-section-number">5.2</span> Posterior effect size of control eQTLs</h2>
@@ -799,39 +772,40 @@ par(mfrow = c(5, 2))
 for(i in 1 : 10) {
   mash_plot_meta(mash$posterior, random.idx[i], color = meta.colors(lines = tissue.color), main = paste0(i, &#39;: &#39;, eqtl[i]))
 }</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-8-1.png" width="768" /></p>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-39-1.png" width="768" /></p>
 </div>
 </div>
-<div id="g-protein-coupled-receptor" class="section level1">
-<h1><span class="header-section-number">6</span> G-protein coupled receptor</h1>
-<p>GO term ‘<a href="GO:0007200" class="uri">GO:0007200</a>’ is used (represent phospholipase C-activating G-protein coupled receptor signaling pathway )</p>
+<div id="glycoprotein-biosythetic-process" class="section level1">
+<h1><span class="header-section-number">6</span> Glycoprotein biosythetic process</h1>
+<p>GO term ‘<a href="GO:0009101" class="uri">GO:0009101</a>’ is used (represent glycoprotein biosythetic process)</p>
 <div id="loading" class="section level2">
 <h2><span class="header-section-number">6.1</span> Loading</h2>
-<p>Contrast eQTL in cation/ion transport with the ones unrelated to cation/ion transport on the loading of factor 2.</p>
-<pre class="r"><code>re.go &lt;- read.table(&#39;../output/strong_eqtl_annotated.txt.gz&#39;, header = T)
+<p>Contrast eQTL in cation/ion transport with the ones unrelated to cation/ion transport on the loading of factor 3.</p>
+<pre class="r"><code>thisgo &lt;- &#39;GO:0009101&#39;
+goids &lt;- as.list(GOBPCHILDREN)[[thisgo]]
+re.go &lt;- read.table(&#39;../output/strong_eqtl_annotated.txt.gz&#39;, header = T)
 re.go.dup &lt;- duplicated(re.go[, c(&#39;ensembl_gene_id&#39;, &#39;go_id&#39;)])
 re.go &lt;- re.go[!re.go.dup, ]
-cr.gene &lt;- re.go[re.go$go_id == &#39;GO:0007200&#39;, &#39;idx&#39;]
-tspt &lt;- rep(&#39;Not GP&#39;, length(l.two))
-tspt[unique(cr.gene)] &lt;- &#39;GP&#39;
+cr.gene &lt;- re.go[re.go$go_id %in% c(goids, thisgo), &#39;idx&#39;]
+tspt &lt;- rep(&#39;Not GBP&#39;, length(l.two))
+tspt[unique(cr.gene)] &lt;- &#39;GBP&#39;
 df &lt;- data.frame(loading = l.two, label = tspt)
 ggplot(df, aes(x = abs(loading), color = label)) + stat_ecdf()</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
-<pre class="r"><code>ks.test(abs(df$loading[df$label == &#39;Not GP&#39;]), abs(df$loading[df$label == &#39;GP&#39;]), alternative = &#39;g&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-40-1.png" width="672" /></p>
+<pre class="r"><code>ks.test(abs(df$loading[df$label == &#39;Not GBP&#39;]), abs(df$loading[df$label == &#39;GBP&#39;]), alternative = &#39;g&#39;)</code></pre>
 <pre><code>## 
 ##  Two-sample Kolmogorov-Smirnov test
 ## 
-## data:  abs(df$loading[df$label == &quot;Not GP&quot;]) and abs(df$loading[df$label == &quot;GP&quot;])
-## D^+ = 0.22635, p-value = 0.2642
+## data:  abs(df$loading[df$label == &quot;Not GBP&quot;]) and abs(df$loading[df$label == &quot;GBP&quot;])
+## D^+ = 0.05513, p-value = 0.6391
 ## alternative hypothesis: the CDF of x lies above that of y</code></pre>
-<pre class="r"><code>wilcox.test(abs(df$loading[df$label == &#39;Not GP&#39;]), abs(df$loading[df$label == &#39;GP&#39;]), alternative = &#39;l&#39;)</code></pre>
+<pre class="r"><code>wilcox.test(abs(df$loading[df$label == &#39;Not GBP&#39;]), abs(df$loading[df$label == &#39;GBP&#39;]), alternative = &#39;l&#39;)</code></pre>
 <pre><code>## 
 ##  Wilcoxon rank sum test with continuity correction
 ## 
-## data:  abs(df$loading[df$label == &quot;Not GP&quot;]) and abs(df$loading[df$label == &quot;GP&quot;])
-## W = 78406, p-value = 0.06026
+## data:  abs(df$loading[df$label == &quot;Not GBP&quot;]) and abs(df$loading[df$label == &quot;GBP&quot;])
+## W = 592940, p-value = 0.5113
 ## alternative hypothesis: true location shift is less than 0</code></pre>
-<p>The result supports the hypothesis that the eQTLs with strong loading on factor 2 are enriched in the phospholipase C-activating G-protein coupled receptor signaling pathway.</p>
 </div>
 <div id="effect-size" class="section level2">
 <h2><span class="header-section-number">6.2</span> Effect size</h2>
@@ -848,63 +822,14 @@ ggplot(df.sig) +
   scale_fill_manual(values = tissue.color, guide = FALSE) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, color = tissue.color)) +
   ggtitle(&#39;Proportion of non-zero effect gene&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-41-1.png" width="672" /></p>
 <pre class="r"><code>df.prop &lt;- df.sig %&gt;% group_by(variable, label) %&gt;%
   summarise(prop = sum(value) / length(value))
-df &lt;- data.frame(GP = df.prop$prop[df.prop$label == &#39;GP&#39;], NGP = df.prop$prop[df.prop$label == &#39;Not GP&#39;], tissue = df.prop$variable[df.prop$label == &#39;GP&#39;])
-ggplot(df) + geom_point(aes(x = NGP, y = GP, color = tissue)) +
+df &lt;- data.frame(GBP = df.prop$prop[df.prop$label == &#39;GBP&#39;], NGBP = df.prop$prop[df.prop$label == &#39;Not GBP&#39;], tissue = df.prop$variable[df.prop$label == &#39;GBP&#39;])
+ggplot(df) + geom_point(aes(x = NGBP, y = GBP, color = tissue)) +
   scale_color_manual(values = tissue.color, guide = FALSE) + geom_abline(slope = 1, intercept = 0) +
-  ggtitle(&#39;Proportion of non-zero effect gene (GP vs not GP)&#39;)</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
-<p>Overall, genes involved in the phospholipase C-activating G-protein coupled receptor signaling pathway does NOT tend to have non-zero posterior effect (95% credible interval).</p>
-</div>
-</div>
-<div id="cellular-respiration-cr" class="section level1">
-<h1><span class="header-section-number">7</span> Cellular respiration (CR)</h1>
-<p>GO term ‘<a href="GO:0055114" class="uri">GO:0055114</a>’ is used (represent oxidation-reduction process)</p>
-<div id="loading-1" class="section level2">
-<h2><span class="header-section-number">7.1</span> Loading</h2>
-<p>Contrast eQTL in cellular respiration with the ones unrelated to cellular respiration on the loading of factor 2.</p>
-<pre class="r"><code>cr.gene &lt;- re.go[re.go$go_id == &#39;GO:0055114&#39;, &#39;idx&#39;]
-cr &lt;- rep(&#39;Not CR&#39;, length(l.two))
-cr[unique(cr.gene)] &lt;- &#39;CR&#39;
-df &lt;- data.frame(loading = l.two, label = cr)
-ggplot(df, aes(x = abs(loading), color = label)) + stat_ecdf()</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
-<pre class="r"><code>ks.test(abs(df$loading[df$label == &#39;Not CR&#39;]), abs(df$loading[df$label == &#39;CR&#39;]), alternative = &#39;g&#39;)</code></pre>
-<pre><code>## 
-##  Two-sample Kolmogorov-Smirnov test
-## 
-## data:  abs(df$loading[df$label == &quot;Not CR&quot;]) and abs(df$loading[df$label == &quot;CR&quot;])
-## D^+ = 0.079094, p-value = 0.01518
-## alternative hypothesis: the CDF of x lies above that of y</code></pre>
-<pre class="r"><code>wilcox.test(abs(df$loading[df$label == &#39;Not CR&#39;]), abs(df$loading[df$label == &#39;CR&#39;]), alternative = &#39;l&#39;)</code></pre>
-<pre><code>## 
-##  Wilcoxon rank sum test with continuity correction
-## 
-## data:  abs(df$loading[df$label == &quot;Not CR&quot;]) and abs(df$loading[df$label == &quot;CR&quot;])
-## W = 2446200, p-value = 0.002092
-## alternative hypothesis: true location shift is less than 0</code></pre>
-<p>It seems that factor 2 is also associated with cellular repiration. But the enrichment happens in relativelt moderate loading on factor 2.</p>
-</div>
-<div id="factor-2-vs.factor-5" class="section level2">
-<h2><span class="header-section-number">7.2</span> Factor 2 vs. factor 5</h2>
-<pre class="r"><code>df.sum &lt;- data.frame(l5 = l.five, l2 = l.two, cr = cr, tspt = tspt)
-ggplot(df.sum) + stat_ecdf(aes(x = abs(l5), color = cr))</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
-<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l5), color = tspt))</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
-<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l2), color = cr))</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-12-3.png" width="672" /></p>
-<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l2), color = tspt))</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-12-4.png" width="672" /></p>
-<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l5), color = paste(cr, tspt, sep = &#39; &amp; &#39;)))</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-12-5.png" width="672" /></p>
-<pre class="r"><code>ggplot(df.sum) + stat_ecdf(aes(x = abs(l2), color = paste(cr, tspt, sep = &#39; &amp; &#39;)))</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-12-6.png" width="672" /></p>
-<pre class="r"><code>ggplot(df.sum) + geom_point(aes(x = l5, y = l2), alpha = .3) + facet_wrap( ~ paste(cr, tspt, sep = &#39; &amp; &#39;))</code></pre>
-<p><img src="preliminary_flash_mash_f2_files/figure-html/unnamed-chunk-12-7.png" width="672" /></p>
-<p>In summary, it seems that factor 5 does NOT capture the phospholipase C-activating G-protein coupled receptor signaling pathway. The top genes in factor 2 has something to do with the phospholipase C-activating G-protein coupled receptor signaling pathway, which is consistent with brain function.</p>
+  ggtitle(&#39;Proportion of non-zero effect gene (GBP vs not GBP)&#39;)</code></pre>
+<p><img src="preliminary_flash_mash_f11_files/figure-html/unnamed-chunk-41-2.png" width="672" /></p>
 </div>
 </div>
 

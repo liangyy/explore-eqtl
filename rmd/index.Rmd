@@ -21,4 +21,10 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
     - EQTLs with top loading for "muscle factor" [link](preliminary_flash_mash_f9.html)
 
 * "Brain factor" (factor 2)
-    - EQTLs with top loading for "muscle factor" [link](preliminary_flash_mash_f2.html)
+    - EQTLs with top loading for "brain factor" [link](preliminary_flash_mash_f2.html)
+
+* "Skin factor" (factor 3)
+    - EQTLs with top loading for "skin factor" [link](preliminary_flash_mash_f3.html)
+    
+* "Cerebellum factor" (factor 11)
+    - EQTLs with top loading for "cerebellum factor" [link](preliminary_flash_mash_f11.html)

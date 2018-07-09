@@ -116,3 +116,30 @@ subchunkify <- function(g, fig_asp = 1) {
   
   cat(knitr::knit(text = knitr::knit_expand(text = sub_chunk), quiet = TRUE))
 }
+
+annotateEQTL <- function(eqtl, idx, ensembl) {
+  ensg <- data.frame(t(sapply(eqtl[idx], function(str) {
+    temp <- strsplit(as.character(str), '_')[[1]]
+    x <- temp[1]
+    chr <- temp[2]
+    s <- temp[3]
+    return(c(strsplit(x, '.', fixed = T)[[1]][1], chr, s))
+  })))
+  colnames(ensg) <- c('ensembl_gene_id', 'eqtl_chr', 'eqtl_start')
+  ensg$idx <- idx
+  ensg$ensembl_gene_id <- as.character(ensg$ensembl_gene_id)
+  re <- getBM(
+    attributes = c('ensembl_gene_id', 'hgnc_symbol', 'chromosome_name', 'start_position', 'end_position', 'strand', 'go_id', 'name_1006', 'uniprot_genename', 'uniprot_swissprot_accession', 'transcript_start', 'transcript_end'), 
+    filters = 'ensembl_gene_id',
+    values = ensg[, 1],
+    mart = ensembl)
+  re <- inner_join(re, ensg, by = 'ensembl_gene_id')
+  return(re)
+}
+genGene2GO <- function(g2g, re) {
+  gene <- unique(re$ensembl_gene_id)
+  for(x in gene) {
+    g2g[[x]] <- re[re$ensembl_gene_id == x, 'go_id']
+  }
+  return(g2g)
+}
