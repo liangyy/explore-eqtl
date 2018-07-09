@@ -320,6 +320,7 @@ if(nrow(df.sub != 0)) {{
     kable_styling() %>%
     kableExtra::scroll_box(width = "100%", height = "500px")
 }}
+```
 
 # Motifs obtained from all motifs in database
 
