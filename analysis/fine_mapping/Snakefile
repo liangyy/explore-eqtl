@@ -189,7 +189,7 @@ eqtl <- read.table('../../../../../output/strong_eqtl_names.txt', header = F)
 eqtl <- eqtl$V1
 print(paste0('../../../', '{highlight_snp}'))
 if('{highlight_snp}' != '') {{
-  highlight.snp.df <- read.table(paste0('../../../', '{highlight_snp}'), header = T)
+  highlight.snp.df <- read.table(paste0('../../../', '{highlight_snp}'), header = T, sep = '\\t')
 }} else {{
   highlight.snp.df <- NULL
 }}
