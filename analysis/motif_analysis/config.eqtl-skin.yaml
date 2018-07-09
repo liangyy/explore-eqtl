@@ -1,0 +1,19 @@
+task-name: 'skin_second_try'
+flash: '../../output/gtex_flash.rds'
+mash: '../../output/gtex_mash.rds'
+eqtl-meta: '../../output/strong_eqtl_annotated.txt.gz'
+eqtl-name: '../../output/strong_eqtl_names.txt'
+motif-database:
+  human: '../../data/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme'
+  jaspar: '../../data/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_redundant.meme'
+window_size: 1000
+motif-list:  # http://www.pnas.org/content/108/14/5632
+  pnas-human:
+    path: 'motif_list/motif_list-human.skin.txt'
+    database: 'human'
+  pnas-jaspar:
+    path: 'motif_list/motif_list-jaspar.skin.txt'
+    database: 'jaspar'
+genotype:
+  Skin_Not_Sum_Exposed_Suprapubic: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Skin_Not_Sun_Exposed_Suprapubic_Analysis.snps.txt.gz'
+  Skin_Sun_Exposed_Lower_leg: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Skin_Sun_Exposed_Lower_leg_Analysis.snps.txt.gz'
