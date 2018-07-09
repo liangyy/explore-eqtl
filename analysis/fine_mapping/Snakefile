@@ -185,6 +185,8 @@ panderOptions('table.split.table', Inf)
 # Setup
 
 ```{{r}}
+eqtl <- read.table('../../../../../output/strong_eqtl_names.txt', header = F)
+eqtl <- eqtl$V1
 print(paste0('../../../', '{highlight_snp}'))
 if('{highlight_snp}' != '') {{
   highlight.snp.df <- read.table(paste0('../../../', '{highlight_snp}'), header = T)
@@ -222,10 +224,13 @@ for(rds.dir in rds.dirs) {{
     p <- p + ggtitle('PIP (red line: leadingSNP; blue line: candidateSNP)')
     if(!is.null(highlight.snp.df)) {{
       highlight.snp <- highlight.snp.df[highlight.snp.df$ensembl_gene_id == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2] & highlight.snp.df$tissue == tissue, ]
-      leading.snp <- as.numeric(str_match(highlight.snp$leading_eqtl[1], '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2])
-      candidate.snp <- unique(as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2]))
-      p <- p + geom_vline(xintercept = candidate.snp, color = 'blue')
+      if(nrow(highlight.snp) > 0) {{
+        candidate.snp <- unique(as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2]))
+        p <- p + geom_vline(xintercept = candidate.snp, color = 'blue')
+      }}
     }}
+    leading.snp <- eqtl[str_match(eqtl, '([A-Za-z0-9]+).[0-9A-Za-z_]+')[, 2] == str_match(gene, '([A-Za-z0-9]+).[A-Za-z0-9]+')[, 2]]
+    leading.snp <- as.numeric(str_match(eqtl, '[A-Za-z0-9]+.[0-9]+_[0-9]+_([0-9]+)_[A-Za-z0-9_]+')[, 2])
     p <- p + geom_vline(xintercept = leading.snp, color = 'red', linetype = 2)
     x <- as.widget(ggplotly(p))
     output[[length(output) + 1]] <- x
