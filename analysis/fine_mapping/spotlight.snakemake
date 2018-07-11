@@ -57,7 +57,7 @@ source('../../../../scripts/mylib.R')
 # Setup
 
 ```{{r, results='asis'}}
-highlight.snp.df <- read.table(paste0('../../', '{motif_summary}'), header = T)
+highlight.snp.df <- read.table(paste0('../../', '{motif_summary}'), header = T, sep = '\\t')
 rdss <- strsplit('{rds_str}', ',')[[1]]
 gene <- '{gene}'
 motif_prefix <- paste0('../../', '{motif_folder}')
@@ -115,10 +115,11 @@ for(rds in rdss) {{
   df$type[df$coordinate %in% candidate.snp] <- 'Motif SNP'
   df$type[df$coordinate %in% leading.snp] <- 'Leading SNP'
   df$cs <- factor(df$cs)
-  p <- ggplot(df) + geom_point(aes(x = coordinate, y = pip, color = cs, shape = type), size = 3)
+  p <- ggplot(df)
   p <- p + ggtitle(paste0(tissue, '\n PIP (red line: leadingSNP; blue line: candidateSNP)'))
   p <- p + geom_vline(xintercept = candidate.snp, color = 'blue')
   p <- p + geom_vline(xintercept = leading.snp, color = 'red', linetype = 2) + theme(legend.position = "bottom")
+  p <- p + geom_point(aes(x = coordinate, y = pip, color = cs, shape = type), size = 3)
   highlight.snp$pip <- pip[match(as.numeric(str_match(highlight.snp$motif_snp, '[0-9]+_([0-9]+)_[A-Za-z]+_[A-Za-z]+_[A-Za-z0-9]+')[, 2]), coordinate)]
   hitted.sub <- highlight.snp[candidate.snp %in% coordinate[unlist(cs$cs)], ]
   hitted <- rbind(hitted, hitted.sub)

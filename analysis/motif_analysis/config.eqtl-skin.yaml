@@ -18,3 +18,5 @@ motif-all: True
 genotype:
   Skin_Not_Sum_Exposed_Suprapubic: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Skin_Not_Sun_Exposed_Suprapubic_Analysis.snps.txt.gz'
   Skin_Sun_Exposed_Lower_leg: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Skin_Sun_Exposed_Lower_leg_Analysis.snps.txt.gz'
+  Esophagus_Mucosa: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Esophagus_Mucosa_Analysis.snps.txt.gz'
+  Artery_Aorta: '/project/mstephens/data/external_private_supp/gtex-v6/eqtl_data/GTEx_Analysis_2015-01-12_eQTLInputFiles_snpMatrices/Artery_Aorta_Analysis.snps.txt.gz'
