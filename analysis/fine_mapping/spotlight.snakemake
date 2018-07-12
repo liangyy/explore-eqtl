@@ -18,11 +18,13 @@ def get_inputs(config, gene):
     for i in list(config['fine-mapping']['data']):
         path = config['fine-mapping']['data'][i]['dir']
         dirs = glob.glob('{dir}/*'.format(dir = path))
+        fine_dirs = config['fine-mapping']['dir-name'].split(',')
         for d in dirs:
-            if ntpath.basename(d) in ('report', 'gene_snp_map.txt.gz'):
-                continue
-            else:
-                rdss.append('{dir}/{name}/{gene}.rds'.format(dir = d, gene = gene, name = config['fine-mapping']['dir-name']))
+            for f in fine_dirs:
+                if ntpath.basename(d) in ('report', 'gene_snp_map.txt.gz'):
+                    continue
+                else:
+                    rdss.append('{dir}/{name}/{gene}.rds'.format(dir = d, gene = gene, name = f))
     return [summary, mash_plot_dir, motif_logo_dir] + rdss
 
 rule gen_report_rmd:
@@ -83,6 +85,7 @@ mytheme <- gridExtra::ttheme_default(
     rowhead = list(fg_params=list(cex = .7)))
 for(rds in rdss) {{
   tissue <- basename(dirname(dirname(rds)))
+  method <- basename(dirname(rds))
   out <- readRDS(paste0('../../', rds))
   cs0 <- susieR::susie_get_CS(out$fitted, t(data.matrix(out$X[, -ncol(out$X)])), min_abs_corr = 0)
   if(nrow(cs0$purity) > 0) {{
@@ -124,7 +127,7 @@ for(rds in rdss) {{
   hitted.sub <- highlight.snp[candidate.snp %in% coordinate[unlist(cs$cs)], ]
   hitted <- rbind(hitted, hitted.sub)
   e <- plot_grid(plotlist = list(p, tb0), ncol = 1, rel_heights = c(3/4, 1/4))
-  cat('##', tissue, '\n', '\n')
+  cat('##', tissue, method, '\n', '\n')
   subchunkify(e, fig_asp = .8)
   cat('\n', '\n')
   if(nrow(hitted.sub) != 0) {{

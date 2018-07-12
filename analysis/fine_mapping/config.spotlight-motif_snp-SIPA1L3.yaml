@@ -1,0 +1,9 @@
+task-name: 'spotlight-heart_motif_snp-SIPA1L3'
+fine-mapping:
+    dir-name: 'susie,susie_pv_0.01,susie_pv_0.001,susie_pv_1'
+    data:
+      set1:
+        dir: 'output/heart_motif_snp-SIPA1L3/'
+motif-snp:
+  dir: '../motif_analysis/output/first_try/report/'
+gene: 'ENSG00000105738.6'
